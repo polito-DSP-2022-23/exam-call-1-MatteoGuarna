@@ -14,9 +14,18 @@
       "type": "integer",
       "description": "unique identifier of the film for which this review invitation has been issued"
     },
-    "reviewerId": {
+    "reviewId": {
       "type": "integer",
-      "description": "unique identifier of the the user who has received this review invitation"
+      "description": "unique identifier for the review data structure"
+    },
+    "reviewType": {
+      "type": "boolean",
+      "description": "If set to 0 review is a normal single user review, otherwise it is a cooperative review",
+      "default": "false"
+    },
+    "reviewerId": {
+      "type": "array",
+      "description": "unique identifier of the the user (length = 1) or users (length > 1) who has received this review invitation"
     },
     "completed": {
       "type": "boolean",
@@ -40,7 +49,7 @@
       "maxLength": 1000
     }
   },
-  "required": ["filmId", "reviewerId"],
+  "required": ["filmId", "reviewerId", "reviewType"],
   "dependencies": {
     "completed": {
       "oneOf": [

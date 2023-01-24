@@ -13,6 +13,7 @@ externalDocs:
 servers:
   - url: 'https://todo.swagger.io/v2'
   - url: 'http://todo.swagger.io/v2'
+
 tags:
   - name: films
     description: the set of all the films
@@ -22,22 +23,35 @@ tags:
     description: the private film with ID filmId
   - name: films/public
     description: the set of all the public films
-  - name: films/public/invited
-    description: the set of the public films that the logged-in user has been invited to review
   - name: 'films/public/{filmId}'
     description: the public film with ID filmId
+
   - name: 'films/public/{filmId}/reviews'
-    description: the reviews issued for the public film with ID filmId
+    description: the reviews issued for the public film with ID filmId (post new, get all)
   - name: 'films/public/{filmId}/reviews/{reviewerId}'
-    description: the review issued to the user with ID reviewerId for the public film with ID filmId
+    description: all review completed (both as a single and a group) by the user with ID reviewerId for the public film with ID filmId (get all)
+  - name: 'films/public/{filmId}/reviews/{reviewerId}/single'
+    description: the review issued to or completed by the user as a single with ID reviewerId for the public film with ID filmId (get single, put to complete)
+  - name: 'films/public/{filmId}/reviews/toComplete/{reviewerId}'
+    description: the set of the reviews that the logged-in user has been invited to complete (get all)
+
   - name: films/public/assignments
-    description: the assignments of review invitations to users
+    description: the assignment of a review for a film to one or more users (post new review)
+ 
+  - name: groupReviews/{reviewId}/drafts/closed
+    description: the closed drafts associated with ID reviewId (get all)
+  - name: groupReviews/{reviewId}/drafts/open
+    description: the open draft corresponding to the review with ID reviewId (post new, get single)
+  - name: groupReviews/{reviewId}/drafts/open/responses
+    description: the respones to the open draft with ID draft (post new)
+
   - name: users
     description: the set of all the users
   - name: users/authenticator
     description: the authenticator
   - name: 'users/{userId}'
     description: the user with ID userId
+
 paths:
   '/api/films':
     post:
@@ -266,51 +280,7 @@ paths:
                     format: uri
         '500':
           description: Internal Server Error
-          content: {} 
-  '/api/films/public/invited': 
-    get:
-      tags:
-        - films/public/invited
-      security:
-        - cookieAuth: []
-      summary: Retrieve the public films that the logged-in user has been invited to review
-      description: >-
-        The public films that the logged-in user has been invited to review are retrieved. A pagination mechanism is implemented to limit the size of messages.
-      operationId: getInvitedFilms
-      parameters:
-        - in: query
-          name: pageNo
-          required: false
-          schema:
-            type: integer
-          description: 'The id of the requested page (if absent, the first page is returned)'
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  totalPages:
-                    type: integer
-                  currentPage:
-                    type: integer
-                  totalItems:
-                    type: integer
-                  films:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Film'
-                  next:
-                    type: string
-                    format: uri
-        '401':
-          description: Unauthorized
-          content: {}
-        '500':
-          description: Internal Server Error
-          content: {} 
+          content: {}  
   '/api/films/public/{filmId}': 
     get:
       tags:
@@ -423,8 +393,10 @@ paths:
         - 'films/public/{filmId}/reviews'
       security:
         - cookieAuth: []
-      summary: Issue film reviewr to some users
-      description: The film with ID filmId is assigned to one or more users for review and the corresponding reviews are created. The users are specified in the review representations in the request body. This operation can only be performed by the owner.
+      summary: User issues a review for a single film
+      description: 
+        The user issues a review (either ready to be published or still to finish) for the film specified. The review representation is in the request body. 
+        This operation can only be performed by the owner.
       operationId: issueFilmReview
       parameters:
         - name: filmId
@@ -435,7 +407,7 @@ paths:
             type: integer
             format: int64
       requestBody:
-        description: the new film reviews, including the users to whom they are issued
+        description: the new film review
         content:
           application/json:
             schema:
@@ -459,7 +431,7 @@ paths:
           description: Unauthorized
           content: {}
         '403':
-          description: Forbidden
+          description: Forbidden ()
           content: {}
         '404':
           description: Not Found
@@ -524,8 +496,66 @@ paths:
   '/api/films/public/{filmId}/reviews/{reviewerId}':
     get:
       tags:
-        - 'films/public/{filmId}/reviews/{reviewerId}'
-      summary: Retrieve a review that has been issued/completed for a film 
+        - films/public/{filmId}/reviews/{reviewerId}
+      security:
+        - cookieAuth: []
+      summary: Retrieve all reviews a user completed for a film (both single and group)
+      description: >-
+        The reviews that the logged-in user has completed (both single and group) are retrieved. A pagination mechanism is implemented to limit the size of messages.
+      operationId: getReviewsByUser
+      parameters:
+        - name: filmId
+          in: path
+          description: ID of the film whose reviews must be retrieved
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: reviewerId
+          in: path
+          description: ID of the user to whom the review has been issued
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - in: query
+          name: pageNo
+          required: false
+          schema:
+            type: integer
+          description: 'The id of the requested page (if absent, the first page is returned)'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalPages:
+                    type: integer
+                  currentPage:
+                    type: integer
+                  totalItems:
+                    type: integer
+                  films:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Review'
+                  next:
+                    type: string
+                    format: uri
+        '401':
+          description: Unauthorized
+          content: {}
+        '500':
+          description: Internal Server Error
+          content: {}
+  '/api/films/public/{filmId}/reviews/{reviewerId}/single':
+    get:
+      tags:
+        - 'films/public/{filmId}/reviews/{reviewerId}/single'
+      summary: Retrieve a review that has been issued or completed for a film 
       description: >-
         The review of the film with ID filmID issued to the user with ID reviewerId is retrieved. This operation does not require authentication. 
       operationId: getSingleReview
@@ -559,11 +589,14 @@ paths:
           content: {}
     put:
       tags:
-        - 'films/public/{filmId}/reviews/{reviewerId}'
+        - 'films/public/{filmId}/reviews/{reviewerId}/single'
       security:
         - cookieAuth: []
       summary: Complete a review
-      description: The review of the film with ID filmId and issued to the user with ID reviewerId is completed. This operation only allows setting the "completed" property to the "true" value, and changing the values of the "reviewDate", "rating", and "review" properties. This operation can be performed only by the invited reviewer.
+      description: The review of the film with ID filmId and issued to the user with ID reviewerId is completed. 
+        This operation only allows setting the "completed" property to the "true" value, and changing the values of the "reviewDate", "rating", and "review" properties. 
+        This operation can be performed only by the invited reviewer.
+        This operation can succeed only if the review is done by a single user
       operationId: updateSingleReview
       parameters:
         - name: filmId
@@ -629,7 +662,8 @@ paths:
       security:
         - cookieAuth: []
       summary: Delete a review invitation
-      description: The review of the film with ID filmId and issued to the user with ID reviewerId is deleted. This operation can only be performed by the owner, and only if the review has not yet been completed by the reviewer.
+      description: The review of the film with ID filmId and issued to the user with ID reviewerId is deleted. This operation can only be performed by the owner, 
+        and only if the review has not yet been completed by the reviewer.
       operationId: deleteSingleReview
       parameters:
         - name: filmId
@@ -662,32 +696,306 @@ paths:
         '500':
           description: Internal Server Error
           content: {}
-  '/api/films/public/assignments':
-    post:
+  '/api/films/public/{filmId}/reviews/toComplete/{reviewerId}' :
+    get:
       tags:
-        - films/public/assignments
+        - films/public/{filmId}/reviews/toComplete/{reviewerId}
       security:
         - cookieAuth: []
-      summary: Assign automatically review invitations for the unassigned public films owned by the authenticated user in a balanced manner
+      summary: Retrieve the reviews the user needs to complete (both started by him/herself and assigned by owner)
       description: >-
-        The films owned by the authenticated user who performed the request and that are not assigned to any user for review, are automatically assigned to the
-        users of the service in a balanced manner. Only authenticated users can make this request.
-      operationId: assignReviewBalanced
+        The reviews that the logged-in user still has to completed are retrieved. A pagination mechanism is implemented to limit the size of messages.
+      operationId: getUncompletedReviews
+      parameters:
+        - name: filmId
+          in: path
+          description: ID of the film whose review must be completed
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: reviewerId
+          in: path
+          description: ID of the user to whom the review has been issued
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - in: query
+          name: pageNo
+          required: false
+          schema:
+            type: integer
+          description: 'The id of the requested page (if absent, the first page is returned)'
       responses:
         '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  properties:
-                    filmId:
-                     type: integer
-                    reviewerId:
-                      type: integer
+                type: object
+                properties:
+                  totalPages:
+                    type: integer
+                  currentPage:
+                    type: integer
+                  totalItems:
+                    type: integer
+                  films:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Review'
+                  next:
+                    type: string
+                    format: uri
         '401':
           description: Unauthorized
+          content: {}
+        '500':
+          description: Internal Server Error
+          content: {}
+  '/api/films/public/assignments':
+    post:
+      tags:
+        - films/public/assignments
+      security:
+        - cookieAuth: []
+      summary: Assign automatically a review for a public films owned by the authenticated user in a balanced manner
+      description: >-
+        A film owned by the authenticated user who performed the request and that are not assigned to any user for review, is automatically assigned to the
+        users specified in the request in a balanced manner. Only authenticated users can make this request.
+      operationId: assignReviewBalanced
+      requestBody:
+        description: The ID of the film for which the owner wants assign a reviews, and the users whose the review is assigned
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                FilmId:
+                  type: integer
+                  format: int64
+                UsersId:
+                  type: array
+                  items:
+                    type: integer
+                    format: int64
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+        '400':
+          description: Bad Request (e.g., Body field is empty)
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '409':
+          description: Conflict (e.g., User already reviewed film as a single)
+          content: {}
+        '500':
+          description: Internal Server Error
+          content: {} 
+  '/api/groupReviews/{reviewId}/drafts/closed':
+    get:
+      tags:
+        - 'groupReviews/{reviewId}/drafts/closed'
+      security:
+        - cookieAuth: []
+      summary: Retrieve the list of all the drafts that have been closed for a review 
+      description: >-
+        All the drafts that have been closed for a review. A pagination mechanism is implemented to limit the size of messages.
+      operationId: getClosedDrafts
+      parameters:
+        - name: reviewId
+          in: path
+          description: ID of the review whose drafts must be retrieved
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - in: query
+          name: pageNo
+          required: false
+          schema:
+            type: integer
+          description: ID of the requested page (if absent, the first page is returned)'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      totalPages:
+                        type: integer
+                      currentPage:
+                        type: integer
+                      totalItems:
+                        type: integer
+                      reviews:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Draft'
+                      next:
+                        type: string
+                        format: uri
+        '401':
+          description: Unauthorized
+          content: {}
+        '404':
+          description: Not Found
+          content: {}
+        '500':
+          description: Internal Server Error
+          content: {}
+  '/api/groupReviews/{reviewId}/drafts/open':
+    post:
+      tags:
+        - 'groupReviews/{reviewId}/drafts/open'
+      security:
+        - cookieAuth: []
+      summary: Create a new draft for a group review 
+      description: A new draft for the review with ID reviewID is created. The operation is only valid for group reviews, 
+        and if there are not already open drafts for the same review.
+      operationId: issueDraft
+      parameters:
+        - name: reviewId
+          in: path
+          description: ID of the review whose drafts must be retrieved
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        description: the new film reviews, including the users to whom they are issued
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/Draft'
+        required: true
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Draft'
+        '400':
+          description: Bad Request
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '403':
+          description: Forbidden (review is single, not group)
+          content: {}
+        '404':
+          description: Not Found
+          content: {}
+        '409':
+          description: Conflict (an open draft altready exists)
+          content: {}
+        '500':
+          description: Internal Server Error
+          content: {}
+    get:
+      tags:
+        - 'groupReviews/{reviewId}/drafts/open'
+      security:
+        - cookieAuth: []
+      summary: Retrieve an open draft given the ID of the review
+      description: >-
+        The draft corresponding to the review with ID draftId. This operation is allowed only for not completed reviews.
+      operationId: getOpenDraft
+      parameters:
+        - name: reviewId
+          in: path
+          description: ID of the reviewId whose open draft is to be retrieved
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/Draft'
+        '401':
+          description: Unauthorized
+          content: {}
+        '404':
+          description: Not Found
+          content: {}
+        '403':
+          description: Forbidden (review was already completed)
+          content: {}
+        '500':
+          description: Internal Server Error
+          content: {}
+  '/api/groupReviews/{reviewId}/drafts/open/responses':
+    post:
+      tags:
+        - 'groupReviews/{reviewId}/drafts/open/responses'
+      security:
+        - cookieAuth: []
+      summary: Add a response to a draft of a group review
+      description: A new response to the draft the group review with ID reviewId. 
+        This operation is only allowed once per user on each draft and only for not completed reviews..
+      operationId: issueResponse
+      parameters:
+        - name: reviewId
+          in: path
+          description:  ID of the reviewId whose open draft needs a response
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        description: the new response
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/Response'
+        required: true
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Response'
+        '400':
+          description: Bad Request
+          content: {}
+        '401':
+          description: Unauthorized
+          content: {}
+        '403':
+          description: Forbidden (review was already completed)
+          content: {}
+        '404':
+          description: Not Found
+          content: {}
+        '409':
+          description: Conflict (user already generated response for the draft)
           content: {}
         '500':
           description: Internal Server Error
@@ -788,6 +1096,7 @@ paths:
         '401':
           description: Unauthorized
           content: {}
+
 components:
   schemas:
     User: 
@@ -869,19 +1178,25 @@ components:
       properties:
         $schema:
           type: string
-          description: path to the JSON Schema to use for the validation of the JSON data structure
-            describing the film
+          description: path to the JSON Schema to use for the validation of the JSON data structure describing the review
+        reviewId:
+          type: integer
+          description: unique identifier for the review data structure
         filmId:
           type: integer
-          description: unique identifier of the film for which a review invitation has been
-            issued
+          description: unique identifier of the film for which a review invitation has been issued
+        reviewType:
+          type: boolean
+          description: If set to 0 review is a normal single user review, otherwise it is a cooperative review
+          default: 'false'
         reviewerId:
-          type: integer
-          description: unique identifier of the user who has received the review invitation
+          type: array
+          items:
+              type: integer
+          description: unique identifier of the the user (length = 1) or users (length > 1) who has received this review invitation
         completed:
           type: boolean
-          description: true if the review has been completed, false
-            otherwise
+          description: true if the review has been completed, false otherwise
           default: 'false'
         reviewDate:
           type: string
@@ -902,6 +1217,93 @@ components:
       required:
       - filmId
       - reviewerId
+      - reviewType
+    Draft:
+      description: schema for Draft data structures
+      type: object
+      additionalProperties: false
+      properties:
+        $schema:
+          type: string
+          description: path to the JSON Schema to use for the validation of the JSON data structure describing the draft
+        draftId:
+          type: integer
+          description: unique identifier of the film for which this review invitation has been issued
+        reviewId:
+          type: integer
+          description: unique identifier of the film for which this review invitation has been issued
+        authorId:
+          type: integer
+          description: unique identifier of the the user who generates the draft
+        contributorsId:
+          type: array
+          items:
+              type: integer
+          description: unique identifier of the the users who has received this draft check invitation
+        open:
+          type: boolean
+          description: true if the review still requires responses, false otherwise
+          default: 'false'
+        issued:
+          type: boolean
+          description: true if the draft is ready and has been sent to the contributors, false otherwise
+          default: 'false'
+        draftDate:
+          type: string
+          format: date
+          description: the date when the draft has been issued by the author
+        rating:
+          type: integer
+          description: the rating the reviewer has given to the film
+          minimum: 1
+          maximum: 10
+        review:
+          type: string
+          description: a textual description of the review
+          maxLength: 1000
+        responses:
+          type: array
+          items:
+              type: integer
+          description: an array containing responses from all users
+        self: 
+          type: string
+          format: uri
+      required:
+      - reviewId
+      - authorId
+      - contributorsId
+      - draftDate
+      - rating
+      - review
+    Response:
+      description: schema for Response data structures
+      type: object
+      additionalProperties: false
+      properties:
+        $schema:
+          type: string
+          description: path to the JSON Schema to use for the validation of the JSON data structure describing the response
+        draftId:
+          type: integer
+          description: unique identifier of the film for which this review invitation has been issued
+        responderId:
+          type: integer
+          description: unique identifier of the the user has received this draft and whose response is needed
+        agree:
+          type: boolean
+          description: true if the draft has been accepted, false otherwise
+          default: 'true'
+        response:
+          type: string
+          description: a textual description of the response, used ONLY if agree is false
+          maxLength: 1000
+        self: 
+          type: string
+          format: uri
+      required:
+      - draftId
+      - responderId
   securitySchemes:
     cookieAuth:
       description: JWT to identify the authenticated user.

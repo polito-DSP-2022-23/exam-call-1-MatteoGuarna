@@ -1,3 +1,5 @@
+//module.exports.getInvitedFilms NEEDS TO BE DELETED AND REPLACED WITH A FUNCTION RETURNING REVIEWS ASSIGNED INSTEAD OF FILMS WHOSE REVIEW IS ASSIGNED
+
 'use strict';
 
 var utils = require('../utils/writer.js');
@@ -52,7 +54,7 @@ module.exports.getPublicFilms = function getPublicFilms (req, res, next) {
   
     
   };
-
+  //I'M GONNA DELETE YOU!
   module.exports.getInvitedFilms = function getInvitedFilms (req, res, next) {
     var numOfFilms = 0;
     var next=0;
