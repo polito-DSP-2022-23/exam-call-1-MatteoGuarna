@@ -9,4 +9,13 @@ Ho aggiunto campo a review x distinguere individuali da "di gruppo"
 Ho deciso di fare response separate
 Ho aggiunto ID x draft (per potermici riferire da draft)
 In draft ho distinto autore da contributori
+
+
+
+
+
+
+
+
+DEVO mettere il selflink a tutto? anche alle dipendenze? plz no
 NON HO CAPITO bene la scrittura delle dipendenze, sotto il oneOf

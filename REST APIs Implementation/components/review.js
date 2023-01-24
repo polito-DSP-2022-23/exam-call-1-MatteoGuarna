@@ -1,8 +1,10 @@
 class Review{    
-    constructor(filmId, reviewerId, completed, reviewDate, rating, review) {
+    constructor(reviewId, filmId, reviewerId, reviewType, completed, reviewDate, rating, review) {
+        this.reviewId = reviewId;
         this.filmId = filmId;
         this.reviewerId = reviewerId;
         this.completed = completed;
+        this.reviewType = reviewType;
 
         if(reviewDate)
             this.reviewDate = reviewDate;
@@ -10,8 +12,8 @@ class Review{
             this.rating = rating;
         if(review)
             this.review = review;
-        
-        var selfLink = "/api/films/public/" + this.filmId + "/reviews/" + this.reviewerId;
+
+        var selfLink = "/api/reviews/{reviewId}" + this.reviewId;
         this.self =  selfLink;
     }
 }

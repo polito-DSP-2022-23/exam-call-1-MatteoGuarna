@@ -38,11 +38,13 @@ tags:
   - name: films/public/assignments
     description: the assignment of a review for a film to one or more users (post new review)
  
-  - name: groupReviews/{reviewId}/drafts/closed
+  - name: reviews/{reviewId}
+    description: the review associated with ID reviewId (get single)
+  - name: reviews/{reviewId}/group/drafts/closed
     description: the closed drafts associated with ID reviewId (get all)
-  - name: groupReviews/{reviewId}/drafts/open
+  - name: reviews/{reviewId}/group/drafts/open
     description: the open draft corresponding to the review with ID reviewId (post new, get single)
-  - name: groupReviews/{reviewId}/drafts/open/responses
+  - name: reviews/{reviewId}/group/drafts/open/responses
     description: the respones to the open draft with ID draft (post new)
 
   - name: users
@@ -800,10 +802,39 @@ paths:
         '500':
           description: Internal Server Error
           content: {} 
-  '/api/groupReviews/{reviewId}/drafts/closed':
+  '/api/reviews/{reviewId}':
     get:
       tags:
-        - 'groupReviews/{reviewId}/drafts/closed'
+        - 'reviews/{reviewId}'
+      summary: Retrieve a review by its ID reviewId
+      description: >-
+        The review given its ID reviewId. This operation does not require authentication. 
+      operationId: getReviewById
+      parameters:
+        - name: reviewId
+          in: path
+          description: ID of the review to retrieve
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+        '404':
+          description: Not Found
+          content: {}
+        '500':
+          description: Internal Server Error
+          content: {}
+  '/api/reviews/{reviewId}/group/drafts/closed':
+    get:
+      tags:
+        - 'reviews/{reviewId}/group/drafts/closed'
       security:
         - cookieAuth: []
       summary: Retrieve the list of all the drafts that have been closed for a review 
@@ -856,10 +887,10 @@ paths:
         '500':
           description: Internal Server Error
           content: {}
-  '/api/groupReviews/{reviewId}/drafts/open':
+  '/api/reviews/{reviewId}/group/drafts/open':
     post:
       tags:
-        - 'groupReviews/{reviewId}/drafts/open'
+        - 'reviews/{reviewId}/group/drafts/open'
       security:
         - cookieAuth: []
       summary: Create a new draft for a group review 
@@ -912,7 +943,7 @@ paths:
           content: {}
     get:
       tags:
-        - 'groupReviews/{reviewId}/drafts/open'
+        - 'reviews/{reviewId}/group/drafts/open'
       security:
         - cookieAuth: []
       summary: Retrieve an open draft given the ID of the review
@@ -946,10 +977,10 @@ paths:
         '500':
           description: Internal Server Error
           content: {}
-  '/api/groupReviews/{reviewId}/drafts/open/responses':
+  '/api/reviews/{reviewId}/group/drafts/open/responses':
     post:
       tags:
-        - 'groupReviews/{reviewId}/drafts/open/responses'
+        - 'reviews/{reviewId}/group/drafts/open/responses'
       security:
         - cookieAuth: []
       summary: Add a response to a draft of a group review
@@ -1243,10 +1274,6 @@ components:
         open:
           type: boolean
           description: true if the review still requires responses, false otherwise
-          default: 'false'
-        issued:
-          type: boolean
-          description: true if the draft is ready and has been sent to the contributors, false otherwise
           default: 'false'
         draftDate:
           type: string
