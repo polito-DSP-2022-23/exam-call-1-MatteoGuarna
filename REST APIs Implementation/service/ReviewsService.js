@@ -19,7 +19,7 @@ var constants = require('../utils/constants.js');
   return new Promise((resolve, reject) => {
       var sql = "SELECT r.filmId as fid, r.reviewerId as rid, completed, reviewDate, rating, review, c.total_rows FROM reviews r, (SELECT count(*) total_rows FROM reviews l WHERE l.filmId = ? ) c WHERE  r.filmId = ? ";
       var params = getPagination(req);
-      if (params.length != 2) sql = sql + " LIMIT ?,?";
+      if (params.length !== 2) sql = sql + " LIMIT ?,?";
       db.all(sql, params, (err, rows) => {
           if (err) {
               reject(err);
@@ -56,7 +56,7 @@ var constants = require('../utils/constants.js');
 
 
 /**
- * Retrieve the review of the film having filmId as ID and issued to user with reviewerId as ID
+ * Retrieve the review of the film having reviewId as ID
  *
  * Input: 
  * - filmId: the ID of the film whose review needs to be retrieved
@@ -65,18 +65,38 @@ var constants = require('../utils/constants.js');
  * - the requested review
  * 
  **/
- exports.getSingleReview = function(filmId, reviewerId) {
-  return new Promise((resolve, reject) => {
-      const sql = "SELECT filmId as fid, reviewerId as rid, completed, reviewDate, rating, review FROM reviews WHERE filmId = ? AND reviewerId = ?";
-      db.all(sql, [filmId, reviewerId], (err, rows) => {
-          if (err)
-              reject(err);
-          else if (rows.length === 0)
-              reject(404);
-          else {
-              var review = createReview(rows[0]);
-              resolve(review);
-          }
+ exports.getReview = function(reviewId) {
+    return new Promise((resolve, reject) => {
+        const sql1 = "SELECT reviewerId as rid FROM reviewers WHERE reviewId = ?";
+        var reviewerId = db.all(sql1, [reviewId], (err, rows) => {
+            if (err)
+                reject(err);
+            else if (rows.length !== 1)
+                reject(404);
+            else {
+                reviewerId = rows;
+            }
+        })
+        const sql2 = "SELECT id as reviewId, filmId, reviewType, completed, reviewDate, rating, review FROM reviews WHERE id = ?";
+        db.all(sql2, [reviewId], (err, rows) => {
+            if (err)
+                reject(err);
+            else if (rows.length === 0)
+                reject(404);
+            else {
+                var review = {
+                    reviewId : rows[0].reviewId,
+                    filmId : rows[0].filmId,
+                    reviewType : rows[0].reviewType,
+                    reviewerId : reviewerId,
+                    completed : rows[0].completed,
+                    reviewDate : rows[0].reviewDate,
+                    rating : rows[0].rating,
+                    review : rows[0].review
+                }
+                var review = createReview(review);
+                resolve(review);
+            }
       });
   });
 }
@@ -95,8 +115,8 @@ var constants = require('../utils/constants.js');
  **/
  exports.deleteSingleReview = function(filmId,reviewerId,owner) {
   return new Promise((resolve, reject) => {
-      const sql1 = "SELECT f.owner, r.completed FROM films f, reviews r WHERE f.id = r.filmId AND f.id = ? AND r.reviewerId = ?";
-      db.all(sql1, [filmId, reviewerId], (err, rows) => {
+      const sql1 = "SELECT owner, FROM films WHERE id = ? ";
+      db.all(sql1, [filmId], (err, rows) => {
           if (err)
               reject(err);
           else if (rows.length === 0)
@@ -108,12 +128,22 @@ var constants = require('../utils/constants.js');
               reject("403B");
           }
           else {
-              const sql2 = 'DELETE FROM reviews WHERE filmId = ? AND reviewerId = ?';
-              db.run(sql2, [filmId, reviewerId], (err) => {
-                  if (err)
-                      reject(err);
-                  else
-                      resolve(null);
+                const sql2 = "SELECT r.reviewId FROM r reviewers, v reviews WHERE reviewerId = ? AND r.reviewId = v.id AND v.filmId = ? AND v.reviewType = 0";
+                var reviewId = db.all(sql2, [reviewerId, filmId], (err, rows) => {
+                    if (err)
+                        reject(err);
+                    else if (rows.length === 0)
+                        reject(404);
+                    else {
+                        reviewerId = rows[0];
+                    }
+                })
+                const sql3 = 'DELETE FROM reviews WHERE id = ?';
+                db.run(sql3, [filmId, reviewerId], (err) => {
+                    if (err)
+                        reject(err);
+                    else
+                        resolve(null);
               })
           }
       });

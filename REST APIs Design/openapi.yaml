@@ -34,9 +34,6 @@ tags:
     description: the review issued to or completed by the user as a single with ID reviewerId for the public film with ID filmId (get single, put to complete)
   - name: 'films/public/{filmId}/reviews/toComplete/{reviewerId}'
     description: the set of the reviews that the logged-in user has been invited to complete (get all)
-
-  - name: films/public/assignments
-    description: the assignment of a review for a film to one or more users (post new review)
  
   - name: reviews/{reviewId}
     description: the review associated with ID reviewId (get single)
@@ -77,7 +74,7 @@ paths:
           content:
             application/json:
               schema:
-                  $ref: '#/components/schemas/Film'
+                $ref: '#/components/schemas/Film'
         '400':
           description: Bad Request
           content: {}
@@ -392,54 +389,43 @@ paths:
   '/api/films/public/{filmId}/reviews':
     post:
       tags:
-        - 'films/public/{filmId}/reviews'
+        - films/public/{filmId}/reviews
       security:
         - cookieAuth: []
-      summary: User issues a review for a single film
-      description: 
-        The user issues a review (either ready to be published or still to finish) for the film specified. The review representation is in the request body. 
-        This operation can only be performed by the owner.
-      operationId: issueFilmReview
-      parameters:
-        - name: filmId
-          in: path
-          description: ID of the film
-          required: true
-          schema:
-            type: integer
-            format: int64
+      summary: Assign automatically a review for a public film with ID filmId, to the users specified in the request body
+      description: >-
+        A film with ID filmId is automatically assigned to the user or users specifiedas an array in the request body. Only authenticated users can make this request.
+      operationId: assignReviewBalanced
       requestBody:
-        description: the new film review
+        description: The ID of the user or users whom the review is assigned (array is required also for single element)
         content:
           application/json:
             schema:
               type: array
               items:
-                $ref: '#/components/schemas/Review'
-        required: true
+                type: integer
+                format: int64
       responses:
         '201':
           description: Created
           content:
             application/json:
               schema:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/Review'
+                $ref: '#/components/schemas/Review'
         '400':
-          description: Bad Request
+          description: Bad Request (e.g., Body field is empty)
           content: {}
         '401':
           description: Unauthorized
           content: {}
         '403':
-          description: Forbidden ()
+          description: Forbidden
           content: {}
         '404':
           description: Not Found
           content: {}
         '409':
-          description: Conflict (e.g., wrong film id or unknown reviewer id)
+          description: Conflict (e.g., User already reviewed film as a single)
           content: {}
         '500':
           description: Internal Server Error
@@ -756,52 +742,6 @@ paths:
         '500':
           description: Internal Server Error
           content: {}
-  '/api/films/public/assignments':
-    post:
-      tags:
-        - films/public/assignments
-      security:
-        - cookieAuth: []
-      summary: Assign automatically a review for a public films owned by the authenticated user in a balanced manner
-      description: >-
-        A film owned by the authenticated user who performed the request and that are not assigned to any user for review, is automatically assigned to the
-        users specified in the request in a balanced manner. Only authenticated users can make this request.
-      operationId: assignReviewBalanced
-      requestBody:
-        description: The ID of the film for which the owner wants assign a reviews, and the users whose the review is assigned
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: false
-              properties:
-                FilmId:
-                  type: integer
-                  format: int64
-                UsersId:
-                  type: array
-                  items:
-                    type: integer
-                    format: int64
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Review'
-        '400':
-          description: Bad Request (e.g., Body field is empty)
-          content: {}
-        '401':
-          description: Unauthorized
-          content: {}
-        '409':
-          description: Conflict (e.g., User already reviewed film as a single)
-          content: {}
-        '500':
-          description: Internal Server Error
-          content: {} 
   '/api/reviews/{reviewId}':
     get:
       tags:
@@ -910,9 +850,7 @@ paths:
         content:
           application/json:
             schema:
-              type: array
-              items:
-                $ref: '#/components/schemas/Draft'
+              $ref: '#/components/schemas/Draft'
         required: true
       responses:
         '201':
@@ -920,9 +858,7 @@ paths:
           content:
             application/json:
               schema:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/Draft'
+                $ref: '#/components/schemas/Draft'
         '400':
           description: Bad Request
           content: {}
@@ -1000,9 +936,7 @@ paths:
         content:
           application/json:
             schema:
-              type: array
-              items:
-                $ref: '#/components/schemas/Response'
+              $ref: '#/components/schemas/Response'
         required: true
       responses:
         '201':
@@ -1010,9 +944,7 @@ paths:
           content:
             application/json:
               schema:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/Response'
+                $ref: '#/components/schemas/Response'
         '400':
           description: Bad Request
           content: {}
@@ -1218,12 +1150,12 @@ components:
           description: unique identifier of the film for which a review invitation has been issued
         reviewType:
           type: boolean
-          description: If set to 0 review is a normal single user review, otherwise it is a cooperative review
+          description: If set to false review is a normal single user review, otherwise it is a cooperative review
           default: 'false'
         reviewerId:
           type: array
           items:
-              type: integer
+            type: integer
           description: unique identifier of the the user (length = 1) or users (length > 1) who has received this review invitation
         completed:
           type: boolean
