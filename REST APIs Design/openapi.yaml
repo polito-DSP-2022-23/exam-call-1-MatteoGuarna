@@ -395,7 +395,15 @@ paths:
       summary: Assign automatically a review for a public film with ID filmId, to the users specified in the request body
       description: >-
         A film with ID filmId is automatically assigned to the user or users specifiedas an array in the request body. Only authenticated users can make this request.
-      operationId: assignReviewBalanced
+      operationId: issueFilmReview
+      parameters:
+        - name: filmId
+          in: path
+          description: ID of the film whose review is going to be assigned
+          required: true
+          schema:
+            type: integer
+            format: int64
       requestBody:
         description: The ID of the user or users whom the review is assigned (array is required also for single element)
         content:

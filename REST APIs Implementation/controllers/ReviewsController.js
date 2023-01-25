@@ -3,6 +3,7 @@
 var utils = require('../utils/writer.js');
 var Reviews = require('../service/ReviewsService');
 var constants = require('../utils/constants.js');
+var Films = require('../service/FilmsService');
 
 module.exports.getFilmReviews = function getFilmReviews (req, res, next) {
 
@@ -11,41 +12,43 @@ module.exports.getFilmReviews = function getFilmReviews (req, res, next) {
     var next=0;
 
     Reviews.getFilmReviewsTotal(req.params.filmId)
+      .then(function(response) {
+        
+        numOfReviews = response;
+        Reviews.getFilmReviews(req)
         .then(function(response) {
-          
-            numOfReviews = response;
-            Reviews.getFilmReviews(req)
-            .then(function(response) {
-                if (req.query.pageNo == null) var pageNo = 1;
-                else var pageNo = req.query.pageNo;
-                var totalPage=Math.ceil(numOfReviews / constants.OFFSET);
-                next = Number(pageNo) + 1;
-                if (pageNo>totalPage) {
-                    utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': "The page does not exist." }], }, 404);
-                } else if (pageNo == totalPage) {
-                    utils.writeJson(res, {
-                        totalPages: totalPage,
-                        currentPage: pageNo,
-                        totalItems: numOfReviews,
-                        reviews: response
-                    });
-                } else {
-                    utils.writeJson(res, {
-                        totalPages: totalPage,
-                        currentPage: pageNo,
-                        totalItems: numOfReviews,
-                        reviews: response,
-                        next: "/api/films/public/" + req.params.taskId +"?pageNo=" + next
-                    });
-                }
-        })
-        .catch(function(response) {
-            utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': response }], }, 500);
-        });
-        })
-        .catch(function(response) {
+          if (req.query.pageNo == null) var pageNo = 1;
+          else var pageNo = req.query.pageNo;
+          var totalPage=Math.ceil(numOfReviews / constants.OFFSET);
+          next = Number(pageNo) + 1;
+          if (pageNo>totalPage) {
+            utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': "The page does not exist." }], }, 404);
+          } 
+          else if (pageNo == totalPage) {
+            utils.writeJson(res, {
+              totalPages: totalPage,
+              currentPage: pageNo,
+              totalItems: numOfReviews,
+              reviews: response
+              });
+          } 
+          else {
+            utils.writeJson(res, {
+              totalPages: totalPage,
+              currentPage: pageNo,
+              totalItems: numOfReviews,
+              reviews: response,
+              next: "/api/films/public/" + req.params.taskId +"?pageNo=" + next
+            });
+          }
+      })
+      .catch(function(response) {
           utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': response }], }, 500);
       });
+    })
+    .catch(function(response) {
+      utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': response }], }, 500);
+  });
   
 };
 
@@ -90,16 +93,14 @@ module.exports.deleteSingleReview = function deleteSingleReview (req, res, next)
 };
 
 module.exports.issueFilmReview = function issueFilmReview (req, res, next) {
-  var differentFilm = false;
-  for(var i = 0; i < req.body.length; i++){
-    if(req.params.filmId != req.body[i].filmId){
-      differentFilm = true;
+    var film;
+    try {
+      film = Films.getSinglePublicFilm();
+    }catch(err){
+
+      return;
     }
-  }
-  if(differentFilm){
-    utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'The filmId field of the review object is different from the filmdId path parameter.' }], }, 409);
-  }
-  else {
+
     Reviews.issueFilmReview(req.body, req.user.id)
     .then(function (response) {
       utils.writeJson(res, response, 201);
@@ -118,7 +119,6 @@ module.exports.issueFilmReview = function issueFilmReview (req, res, next) {
           utils.writeJson(res, {errors: [{ 'param': 'Server', 'msg': response }],}, 500);
       }
     });
-  }
 };
 
 module.exports.updateSingleReview = function updateSingleReview (req, res, next) {

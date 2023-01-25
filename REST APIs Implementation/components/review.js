@@ -3,6 +3,7 @@ class Review{
         this.reviewId = reviewId;
         this.filmId = filmId;
         this.reviewerId = reviewerId;
+        //for (var r of reviewerId) this.reviewerId.push(r)
         this.completed = completed;
         this.reviewType = reviewType;
 
@@ -13,7 +14,7 @@ class Review{
         if(review)
             this.review = review;
 
-        var selfLink = "/api/reviews/{reviewId}" + this.reviewId;
+        var selfLink = "/api/reviews/" + this.reviewId;
         this.self =  selfLink;
     }
 }
