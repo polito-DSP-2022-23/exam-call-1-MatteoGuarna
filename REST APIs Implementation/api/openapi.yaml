@@ -498,7 +498,7 @@ paths:
       summary: Retrieve all reviews a user completed for a film (both single and group)
       description: >-
         The reviews that the logged-in user has completed (both single and group) are retrieved. A pagination mechanism is implemented to limit the size of messages.
-      operationId: getReviewsByUser
+      operationId: getReviewsByFilmAndReviewer
       parameters:
         - name: filmId
           in: path

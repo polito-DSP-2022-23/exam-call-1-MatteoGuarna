@@ -66,7 +66,7 @@ var constants = require('../utils/constants.js');
  **/
  exports.getFilmReviewsTotal = function(filmId) {
   return new Promise((resolve, reject) => {
-      var sqlNumOfReviews = "SELECT count(*) total FROM reviews WHERE filmId = ? AND completed = 1 ";
+      var sqlNumOfReviews = "SELECT count(*) as total FROM reviews WHERE filmId = ? AND completed = 1 ";
       db.get(sqlNumOfReviews, [filmId], (err, size) => {
           if (err) {
               reject(err);
@@ -76,6 +76,84 @@ var constants = require('../utils/constants.js');
       });
   });
 }
+
+
+/**
+ * Retrieve the public review by filmId and reviewerId
+ * 
+ * Input: 
+ * - req: the request of the user
+ * Output:
+ * - list of the reviews
+ * 
+ **/
+exports.getReviewsByFilmAndReviewer = function(req) {
+    return new Promise((resolve, reject) => {
+        //get all reviews with filmId
+        var sql =   "SELECT r.reviewId, v.filmId, v.reviewType, r.reviewerId, v.completed, v.reviewDate, v.rating, v.review \
+                    FROM reviewers r, reviews v \
+                    WHERE v.filmId = ? AND r.reviewerId = ? AND r.reviewId = v.id AND v.completed = 1";
+        var params = getPagination3(req);
+        if (params.length !== 2) sql = sql + " LIMIT ?,?";
+
+        var reviews = []
+        db.all(sql, params, async (err, rows) => {
+            if (err) {
+                reject(err);
+            }
+            for (var row of rows) {
+                //edit each review by adding the array of IDs of the reviewers for that review
+                try{
+                    var reviewers = await getReviewers(row.reviewId);
+                    var review = {
+                        reviewId : row.reviewId,
+                        filmId : row.filmId,
+                        reviewType : row.reviewType,
+                        reviewerId : reviewers,
+                        completed : row.completed,
+                        reviewDate : row.reviewDate,
+                        rating : row.rating,
+                        review : row.review
+                    };
+                    review = createReview(review);
+                    reviews.push(review);   
+                }
+                catch(err){
+                    reject(err);
+                    return;
+                }
+            }
+            resolve(reviews);
+        });
+    });
+}
+
+
+/**
+ * Retrieve the number of reviews of the film with ID filmId
+ * 
+ * Input: 
+* - filmId: the ID of the film whose reviews need to be retrieved
+ * Output:
+ * - total number of reviews of the film with ID filmId
+ * 
+ **/
+ exports.getReviewsByFilmAndReviewerTotal = function(filmId, reviewerId) {
+  return new Promise((resolve, reject) => {
+      var sqlNumOfReviews = "SELECT count(*) as total\
+                            FROM reviewers r, reviews v\
+                            WHERE r.reviewId = v.id AND r.reviewerId = ? AND v.filmId = ? AND v.completed = 1";
+      db.get(sqlNumOfReviews, [filmId, reviewerId], (err, size) => {
+          if (err) {
+              reject(err);
+          } else {
+              resolve(size.total);
+          }
+      });
+  });
+}
+
+
 
 
 /**
@@ -439,7 +517,21 @@ const getPagination2 = function(req) {
     limits.push(size * (pageNo - 1));
     limits.push(size);
     return limits;
-  }
+}
+
+const getPagination3 = function(req) {
+    var pageNo = parseInt(req.query.pageNo);
+    var size = parseInt(constants.OFFSET);
+    var limits = [];
+    limits.push(req.params.filmId);
+    limits.push(req.params.reviewerId);
+    if (req.query.pageNo == null) {
+        pageNo = 1;
+    }
+    limits.push(size * (pageNo - 1));
+    limits.push(size);
+    return limits;
+}
 
 
 const getReviewers = function(reviewId) {

@@ -52,6 +52,50 @@ module.exports.getFilmReviews = function getFilmReviews (req, res, next) {
   
 };
 
+module.exports.getReviewsByFilmAndReviewer = function getReviewsByFilmAndReviewer (req, res, next) {
+  //retrieve a list of reviews
+  var numOfReviews = 0;
+  var next=0;
+
+  Reviews.getReviewsByFilmAndReviewerTotal(req.params.filmId, req.params.reviewerId)
+  .then(function(response) {
+    
+    numOfReviews = response;
+    Reviews.getReviewsByFilmAndReviewer(req)
+    .then(function(response) {
+      if (req.query.pageNo == null) var pageNo = 1;
+      else var pageNo = req.query.pageNo;
+      var totalPage = Math.ceil(numOfReviews / constants.OFFSET);
+      next = Number(pageNo) + 1;
+      if (pageNo > totalPage) {
+        utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': "The page does not exist." }], }, 404);
+      } 
+      else if (pageNo == totalPage) {
+        utils.writeJson(res, {
+          totalPages: totalPage,
+          currentPage: pageNo,
+          totalItems: numOfReviews,
+          reviews: response
+          });
+      } 
+      else {
+        utils.writeJson(res, {
+          totalPages: totalPage,
+          currentPage: pageNo,
+          totalItems: numOfReviews,
+          reviews: response,
+          next: "/api/films/public/" + req.params.filmId + "/reviews/" + req.params.reviewerId + "?pageNo=" + next
+        });
+      }
+    })
+    .catch(function(response) {
+      utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': response }], }, 500);
+    });
+  })
+  .catch(function(response) {
+    utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': response }], }, 500);
+  });
+}
 
 module.exports.getSingleReview = function getSingleReview (req, res, next) {
 
