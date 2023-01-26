@@ -113,6 +113,22 @@ module.exports.getSingleReview = function getSingleReview (req, res, next) {
         });
 };
 
+module.exports.getReviewById = function getReviewById (req, res, next) {
+  
+  Reviews.getReviewById(req.params.reviewId)
+  .then(function(response) {
+      utils.writeJson(res, response);
+  })
+  .catch(function(response) {
+      if (response == 404){
+          utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'The review does not exist.' }], }, 404);
+      }
+      else {
+          utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': response }], }, 500);
+      }
+  });
+};
+
 
 module.exports.deleteSingleReview = function deleteSingleReview (req, res, next) {
 
@@ -138,14 +154,9 @@ module.exports.deleteSingleReview = function deleteSingleReview (req, res, next)
 
 module.exports.issueFilmReview = function issueFilmReview (req, res, next) {
     var film;
-    try {
-      film = Films.getSinglePublicFilm(req.params.filmId);
-    }catch(err){
-      utils.writeJson(res, {errors: [{ 'param': 'Server', 'msg': response }],}, 404);
-      return;
-    }
-    var userId = (req.body.id ? req.body.id : [req.user.id]);
-    Reviews.issueFilmReview(film.id, userId)
+
+    var usersArray = (req.body.id ? req.body.id : [req.user.id]);
+    Reviews.issueFilmReview(film.id, usersArray, req.user.id)
     .then(function (response) {
       utils.writeJson(res, response, 201);
     })

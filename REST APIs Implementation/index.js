@@ -102,17 +102,18 @@ app.get('/api/films/private', isLoggedIn, filmController.getPrivateFilms);
 
 
 //TO MOD
-app.post('/api/films/public/:filmId/reviews', isLoggedIn, reviewController.issueFilmReview);
 app.put('/api/films/public/:filmId/reviews/:reviewerId', isLoggedIn, reviewController.updateSingleReview);
 app.delete('/api/films/public/:filmId/reviews/:reviewerId', isLoggedIn, reviewController.deleteSingleReview);
 
 
 //FIXED
 app.get('/api/films/public/:filmId/reviews', reviewController.getFilmReviews); //OK
+app.post('/api/films/public/:filmId/reviews', isLoggedIn, reviewController.issueFilmReview);
 app.get('/api/films/public/:filmId/reviews/:reviewerId', reviewController.getReviewsByFilmAndReviewer); //OK
 app.get('/api/films/public/:filmId/reviews/:reviewerId/single', reviewController.getSingleReview); //OK
 
 app.get('/api/reviews/toComplete', isLoggedIn, reviewController.getUncompletedReviews); //OK
+app.get('/api/reviews/:reviewId', reviewController.getReviewById); //OK BUT TO MODIFY ONLY FOR COMPLETED REVIEWS
 
 //TO DELETE
 app.get('/api/films/public/invited', isLoggedIn, filmController.getInvitedFilms);

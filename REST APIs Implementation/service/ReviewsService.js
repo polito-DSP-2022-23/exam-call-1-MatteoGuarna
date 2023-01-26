@@ -143,7 +143,7 @@ exports.getReviewsByFilmAndReviewer = function(req) {
       var sqlNumOfReviews = "SELECT count(*) as total\
                             FROM reviewers r, reviews v\
                             WHERE r.reviewId = v.id AND r.reviewerId = ? AND v.filmId = ? AND v.completed = 1";
-      db.get(sqlNumOfReviews, [filmId, reviewerId], (err, size) => {
+      db.get(sqlNumOfReviews, [reviewerId, filmId], (err, size) => {
           if (err) {
               reject(err);
           } else {
@@ -198,20 +198,20 @@ exports.getSingleReview = function(filmId, reviewerId) {
  * 
  **/
  exports.getReviewById = function(reviewId) {
+
     return new Promise(async (resolve, reject) => {
-        var reviewers;
+        var review;
+        const sql = "SELECT id as reviewId, filmId, reviewType, completed, reviewDate, rating, review FROM reviews WHERE id = ?";
+        db.all(sql, [reviewId], async (err, rows) => {
+            if (err)
+                reject(err);
+            else if (rows.length === 0)
+                reject(404);
+            else {
 
-        try{
-            reviewers = await getReviewers(reviewId);
-
-            const sql = "SELECT id as reviewId, filmId, reviewType, completed, reviewDate, rating, review FROM reviews WHERE id = ?";
-            db.all(sql, [reviewId], (err, rows) => {
-                if (err)
-                    reject(err);
-                else if (rows.length === 0)
-                    reject(404);
-                else {
-                    var review = {
+                try{
+                    var reviewers = await getReviewers(reviewId);
+                    review = {
                         reviewId : rows[0].reviewId,
                         filmId : rows[0].filmId,
                         reviewType : rows[0].reviewType,
@@ -221,14 +221,15 @@ exports.getSingleReview = function(filmId, reviewerId) {
                         rating : rows[0].rating,
                         review : rows[0].review
                     }
-                    var review = Review(review);
+                    review = createReview(review);
                     resolve(review);
                 }
-            });
-        }catch(err){
-            reject(404);
-            return;
-        }
+                catch(err){
+                    reject(404);
+                    return;
+                }
+            }
+        });
 
   });
 }
@@ -297,54 +298,67 @@ exports.getSingleReview = function(filmId, reviewerId) {
  * - no response expected for this operation
  * 
  **/
- exports.issueFilmReview = function() {
+
+/*
+ exports.issueFilmReview = function(filmId, usersArray, loggedUser) {
   return new Promise((resolve, reject) => {
-      const sql1 = "SELECT owner, private FROM films WHERE id = ?";
-      db.all(sql1, [invitations[0].filmId], (err, rows) => {
-          if (err){
-                reject(err);
-          }
-          else if (rows.length === 0){
-              reject(404);
-          }
-          else if(owner != rows[0].owner) {
-              reject(403);
-          } else if(rows[0].private == 1) {
-              reject(404);
-          }
-          else {
+    const sql1 = "SELECT owner, private FROM films WHERE id = ?";
+    db.all(sql1, [filmId], (err, rows) => {
+        if (err){
+            reject(err);
+        }
+        else if (rows.length === 0){
+            reject(404);
+        }
+        else if(loggedUser != rows[0].owner) {
+            reject(403);
+        }
+        else if(rows[0].private == 1) {
+            reject(404);
+        }
+        else {
             var sql2 = 'SELECT * FROM users' ;
-            var invitedUsers = [];
-            for (var i = 0; i < invitations.length; i++) {
-                console.log(invitations[i]);
+            for (var i = 0; i < usersArray.length; i++) {
                 if(i == 0) sql2 += ' WHERE id = ?';
                 else sql2 += ' OR id = ?'
-                invitedUsers[i] = invitations[i].reviewerId;
             }
-            db.all(sql2, invitedUsers, async function(err, rows) {
+            db.all(sql2, usersArray, async function(err, rows) {
                 if (err) {
                     reject(err);
                 } 
-                else if (rows.length !== invitations.length){
+                else if (rows.length !== usersArray.length){
                     reject(409);
                 }
                 else {
-                    const sql3 = 'INSERT INTO reviews(filmId, reviewerId, completed) VALUES(?,?,0)';
-                    var finalResult = [];
-                    for (var i = 0; i < invitations.length; i++) {
-                        var singleResult;
-                        try {
-                            singleResult = await issueSingleReview(sql3, invitations[i].filmId, invitations[i].reviewerId);
-                            finalResult[i] = singleResult;
-                        } catch (error) {
-                            reject ('Error in the creation of the review data structure');
-                            break;
+                    const sql3 = 'SELECT coalesce(min(t.id) + 1, 0) id FROM reviews r LEFT OUTER JOIN reviews r2 ON r.id = r2.id - 1 WHERE r2.id IS NULL;'
+                    db.get(sql2, usersArray, async function(err, data) {
+                        if (err) {
+                            reject(err);
                         }
-                    }
+                        else {
+                            var reviewId = data.id;
+                            const sql4 = 'INSERT INTO reviews(id, filmId, completed) VALUES(?,?,0)'
+                            const sql5 = 'INSERT INTO reviewers(reviewsId,reviewersId) VALUES(?,?)'
+                            try {
+                                await executeSQL('BEGIN TRANSACTION', []);
+                                await executeSQL('sql4',[reviewId,filmId]);
+                                for (let user of usersArray) {
+                                    await executeSQL('sql5',[reviewId,user]);
+                                }
+                                await executeSQL('COMMIT', []);
 
-                    if(finalResult.length !== 0){
-                        resolve(finalResult);
-                    }        
+                            }
+                            catch(err){
+                                try {
+                                    await executeSQL('ROLLBACK TRANSACTION', []);
+                                    reject(err);
+                                }
+                                catch(err){
+                                    reject(err);
+                                }
+                            }
+                        }
+                    })      
                 }
             }); 
           }
@@ -352,18 +366,7 @@ exports.getSingleReview = function(filmId, reviewerId) {
   });
 }
 
-const issueSingleReview = function(sql3, filmId, reviewerId){
-    return new Promise((resolve, reject) => {
-        db.run(sql3, [filmId, reviewerId], function(err) {
-            if (err) {
-                reject('500');
-            } else {
-                var createdReview = new Review(filmId, reviewerId, false);
-                resolve(createdReview);
-            }
-        });
-    })
-}
+*/
 
 /**
  * Complete and update a review
@@ -476,7 +479,7 @@ exports.getUncompletedReviews = function(req) {
   exports.getUncompletedReviewsTotal = function(userId) {
     return new Promise((resolve, reject) => {
         //var sqlNumOfReviews = "SELECT count(*) total FROM reviews WHERE filmId = ? ";
-        var sqlNumOfReviews = "SELECT count(*) total FROM reviewers r, reviews v WHERE r.reviewId = v.id AND r.reviewerId = ? AND v.completed = 0";
+        var sqlNumOfReviews = "SELECT count(*) as total FROM reviewers r, reviews v WHERE r.reviewId = v.id AND r.reviewerId = ? AND v.completed = 0";
         db.get(sqlNumOfReviews, [userId], (err, size) => {
             if (err) {
                 reject(err);
@@ -550,9 +553,24 @@ const getReviewers = function(reviewId) {
             }
         });
     });
-  }
+}
 
-  const createReview = function(review) {
+
+  const executeSQL = function(sql3, params){
+    return new Promise((resolve, reject) => {
+
+        db.run(sql3, params, function(err) {
+            if (err) {
+                reject('500');
+            }
+            else resolve();
+        });
+    })
+}
+
+
+
+const createReview = function(review) {
     var completed = (review.completed === 1) ? true : false;
     var reviewType = (review.reviewType === 1) ? "group" : "single";
     return new Review(review.reviewId, review.filmId, review.reviewerId, reviewType, completed, review.reviewDate, review.rating, review.review);
