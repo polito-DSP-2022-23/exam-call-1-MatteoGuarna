@@ -3,9 +3,8 @@ class Review{
         this.reviewId = reviewId;
         this.filmId = filmId;
         this.reviewerId = reviewerId;
-        //for (var r of reviewerId) this.reviewerId.push(r)
-        this.completed = completed;
         this.reviewType = reviewType;
+        this.completed = completed;
 
         if(reviewDate)
             this.reviewDate = reviewDate;

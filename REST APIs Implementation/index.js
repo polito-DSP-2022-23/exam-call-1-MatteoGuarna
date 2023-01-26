@@ -91,11 +91,13 @@ app.post('/api/films', isLoggedIn, validate({ body: filmSchema }), filmControlle
 app.get('/api/films/private/:filmId', isLoggedIn, filmController.getSinglePrivateFilm);
 app.put('/api/films/private/:filmId', isLoggedIn, validate({ body: filmSchema }), filmController.updateSinglePrivateFilm);
 app.delete('/api/films/private/:filmId', isLoggedIn, filmController.deleteSinglePrivateFilm);
-app.get('/api/films/public/invited', isLoggedIn, filmController.getInvitedFilms);
 app.get('/api/films/public/:filmId', filmController.getSinglePublicFilm);
 app.put('/api/films/public/:filmId', isLoggedIn, validate({ body: filmSchema }), filmController.updateSinglePublicFilm);
 app.delete('/api/films/public/:filmId', isLoggedIn, filmController.deleteSinglePublicFilm);
-app.get('/api/films/public/:filmId/reviews', reviewController.getFilmReviews);
+
+
+//TO MOD
+app.get('/api/films/public/:filmId/reviews', reviewController.getFilmReviews); //OK
 app.post('/api/films/public/:filmId/reviews', isLoggedIn, reviewController.issueFilmReview);
 app.get('/api/films/public/:filmId/reviews/:reviewerId', reviewController.getSingleReview);
 app.put('/api/films/public/:filmId/reviews/:reviewerId', isLoggedIn, reviewController.updateSingleReview);
@@ -104,6 +106,14 @@ app.get('/api/users', isLoggedIn, userController.getUsers);
 app.post('/api/users/authenticator', userController.authenticateUser);
 app.get('/api/users/:userId', isLoggedIn, userController.getSingleUser);
 app.get('/api/films/private', isLoggedIn, filmController.getPrivateFilms);
+
+
+//ADDED
+app.get('/api/reviews/toComplete', isLoggedIn, reviewController.getUncompletedReviews);
+
+//TO DELETE
+app.get('/api/films/public/invited', isLoggedIn, filmController.getInvitedFilms);
+
 
 // Error handlers for validation and authentication errors
 

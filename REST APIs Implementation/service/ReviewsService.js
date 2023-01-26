@@ -27,13 +27,11 @@ var constants = require('../utils/constants.js');
             if (err) {
                 reject(err);
             }
-            //resolve(rows)
             for (var row of rows) {
-                var reviewers = [];
                 //edit each review by adding the array of IDs of the reviewers for that review
                 try{
                     var reviewers = await getReviewers(row.reviewId);
-                    var review = new Review({
+                    var review = {
                         reviewId : row.reviewId,
                         filmId : row.filmId,
                         reviewType : row.reviewType,
@@ -42,7 +40,8 @@ var constants = require('../utils/constants.js');
                         reviewDate : row.reviewDate,
                         rating : row.rating,
                         review : row.review
-                    });
+                    };
+                    review = createReview(review);
                     reviews.push(review);   
                 }
                 catch(err){
@@ -67,7 +66,7 @@ var constants = require('../utils/constants.js');
  **/
  exports.getFilmReviewsTotal = function(filmId) {
   return new Promise((resolve, reject) => {
-      var sqlNumOfReviews = "SELECT count(*) total FROM reviews WHERE filmId = ? ";
+      var sqlNumOfReviews = "SELECT count(*) total FROM reviews WHERE filmId = ? AND completed = 1 ";
       db.get(sqlNumOfReviews, [filmId], (err, size) => {
           if (err) {
               reject(err);
@@ -79,9 +78,8 @@ var constants = require('../utils/constants.js');
 }
 
 
-
 /**
- * Retrieve the review of the film having reviewId as ID
+ * Retrieve a single review through filmId and reviewerId ID
  *
  * Input: 
  * - filmId: the ID of the film whose review needs to be retrieved
@@ -90,7 +88,38 @@ var constants = require('../utils/constants.js');
  * - the requested review
  * 
  **/
- exports.getReview = function(reviewId) {
+exports.getSingleReview = function(filmId, reviewerId) {
+    return new Promise(async (resolve, reject) => {
+
+        const sql = "SELECT r.reviewId, v.filmId, v.reviewType, r.reviewerId, v.completed, v.reviewDate, v.rating, v.review FROM reviewers r, reviews v WHERE r.reviewerId = ? AND r.reviewId = v.id AND v.filmId = ? AND v.reviewType = 0";
+        db.all(sql, [reviewerId, filmId], (err, rows) => {
+            if (err)
+                reject(err);
+            else if (rows.length === 0)
+                reject(404);
+            else {
+                rows[0].reviewerId = [rows[0].reviewerId]
+                var review = createReview(rows[0]);
+                resolve(review);
+            }
+        });
+  });
+}
+
+
+
+
+
+/**
+ * Retrieve the review of the film having reviewId as ID
+ *
+ * Input: 
+ * - reviewId: the ID of the review which needs to be retrieved
+ * Output:
+ * - the requested review
+ * 
+ **/
+ exports.getReviewById = function(reviewId) {
     return new Promise(async (resolve, reject) => {
         var reviewers;
 
@@ -312,6 +341,77 @@ const issueSingleReview = function(sql3, filmId, reviewerId){
   });
 }
 
+
+
+
+/**
+ * Retrieve the reviews a user needs to complete (both single and group)
+ * 
+ * Input: 
+ * - userId: the id of the user
+ * Output:
+ * - list of the reviews
+ * 
+ **/
+exports.getUncompletedReviews = function(req) {
+    return new Promise(function(resolve, reject) {
+        var sql =  "SELECT v.id as reviewId, v.filmId, v.reviewType, v.completed, v.reviewDate, v.rating, v.review, r.reviewerId  \
+                    FROM reviewers r, reviews v \
+                    WHERE r.reviewId = v.id AND r.reviewerId = ? AND v.completed = 0 "
+        var params = getPagination2(req);
+        if (params.length !== 2) sql = sql + " LIMIT ?,?";
+
+        var reviews = []
+        db.all(sql, params, async (err, rows) => {
+            if (err) {
+                reject(err);
+            }
+            //resolve(params);
+            //return;
+            for (var row of rows) {
+                //edit each review by adding the array of IDs of the reviewers for that review
+                try{
+                    var reviewers = await getReviewers(row.reviewId);
+                    var review = {
+                        reviewId : row.reviewId,
+                        filmId : row.filmId,
+                        reviewType : row.reviewType,
+                        reviewerId : reviewers,
+                        completed : row.completed,
+                        reviewDate : row.reviewDate,
+                        rating : row.rating,
+                        review : row.review
+                    };
+                    review = createReview(review);
+                    reviews.push(review);   
+                }
+                catch(err){
+                    reject(err);
+                    return;
+                }
+            }
+            resolve(reviews);
+        });
+    });
+}
+  
+  exports.getUncompletedReviewsTotal = function(userId) {
+    return new Promise((resolve, reject) => {
+        //var sqlNumOfReviews = "SELECT count(*) total FROM reviews WHERE filmId = ? ";
+        var sqlNumOfReviews = "SELECT count(*) total FROM reviewers r, reviews v WHERE r.reviewId = v.id AND r.reviewerId = ? AND v.completed = 0";
+        db.get(sqlNumOfReviews, [userId], (err, size) => {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(size.total);
+            }
+        });
+    });
+  }  
+
+
+
+
 /**
  * Utility functions
  */
@@ -328,13 +428,28 @@ const issueSingleReview = function(sql3, filmId, reviewerId){
   return limits;
 }
 
+const getPagination2 = function(req) {
+    var pageNo = parseInt(req.query.pageNo);
+    var size = parseInt(constants.OFFSET);
+    var limits = [];
+    limits.push(req.user.id);
+    if (req.query.pageNo == null) {
+        pageNo = 1;
+    }
+    limits.push(size * (pageNo - 1));
+    limits.push(size);
+    return limits;
+  }
+
+
 const getReviewers = function(reviewId) {
     return new Promise((resolve, reject) => {
         const sql = "SELECT reviewerId FROM reviewers WHERE reviewId = ? ";;
         db.all(sql, [reviewId], (err, rows) => {
             if (err) {
                 reject(err);
-            } else {
+            } 
+            else {
                 var reviewers = [];
                 for (var r of rows){
                     reviewers.push(r.reviewerId)
@@ -344,3 +459,10 @@ const getReviewers = function(reviewId) {
         });
     });
   }
+
+  const createReview = function(review) {
+    var completed = (review.completed === 1) ? true : false;
+    var reviewType = (review.reviewType === 1) ? "group" : "single";
+    return new Review(review.reviewId, review.filmId, review.reviewerId, reviewType, completed, review.reviewDate, review.rating, review.review);
+  }
+  

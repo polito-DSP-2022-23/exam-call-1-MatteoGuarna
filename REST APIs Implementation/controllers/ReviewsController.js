@@ -19,9 +19,9 @@ module.exports.getFilmReviews = function getFilmReviews (req, res, next) {
         .then(function(response) {
           if (req.query.pageNo == null) var pageNo = 1;
           else var pageNo = req.query.pageNo;
-          var totalPage=Math.ceil(numOfReviews / constants.OFFSET);
+          var totalPage = Math.ceil(numOfReviews / constants.OFFSET);
           next = Number(pageNo) + 1;
-          if (pageNo>totalPage) {
+          if (pageNo > totalPage) {
             utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': "The page does not exist." }], }, 404);
           } 
           else if (pageNo == totalPage) {
@@ -95,13 +95,13 @@ module.exports.deleteSingleReview = function deleteSingleReview (req, res, next)
 module.exports.issueFilmReview = function issueFilmReview (req, res, next) {
     var film;
     try {
-      film = Films.getSinglePublicFilm();
+      film = Films.getSinglePublicFilm(req.params.filmId);
     }catch(err){
-
+      utils.writeJson(res, {errors: [{ 'param': 'Server', 'msg': response }],}, 404);
       return;
     }
-
-    Reviews.issueFilmReview(req.body, req.user.id)
+    var userId = (req.body.id ? req.body.id : [req.user.id]);
+    Reviews.issueFilmReview(film.id, userId)
     .then(function (response) {
       utils.writeJson(res, response, 201);
     })
@@ -150,5 +150,50 @@ module.exports.updateSingleReview = function updateSingleReview (req, res, next)
         }
     });
   }
+};
+
+
+module.exports.getUncompletedReviews = function getUncompletedReviews (req, res, next) {
+  //retrieve a list of reviews
+  var numOfReviews = 0;
+  var next=0;
+
+  Reviews.getUncompletedReviewsTotal(req.user.id)
+    .then(function(response) {
+      numOfReviews = response;
+      Reviews.getUncompletedReviews(req)
+      .then(function(response) {
+        if (req.query.pageNo == null) var pageNo = 1;
+        else var pageNo = req.query.pageNo;
+        var totalPage = Math.ceil(numOfReviews / constants.OFFSET);
+        next = Number(pageNo) + 1;
+        if (pageNo > totalPage) {
+          utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': "The page does not exist." }], }, 404);
+        } 
+        else if (pageNo == totalPage) {
+          utils.writeJson(res, {
+            totalPages: totalPage,
+            currentPage: pageNo,
+            totalItems: numOfReviews,
+            reviews: response
+            });
+        } 
+        else {
+          utils.writeJson(res, {
+            totalPages: totalPage,
+            currentPage: pageNo,
+            totalItems: numOfReviews,
+            reviews: response,
+            next: "/api/films/public/" + req.params.filmId + "/reviews/toComplete/" + req.params+ "?pageNo=" + next
+          });
+        }
+    })
+    .catch(function(response) {
+        utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': response }], }, 500);
+    });
+  })
+  .catch(function(response) {
+    utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': response }], }, 500);
+});
 };
 

@@ -29,12 +29,12 @@ tags:
   - name: 'films/public/{filmId}/reviews'
     description: the reviews issued for the public film with ID filmId (post new, get all)
   - name: 'films/public/{filmId}/reviews/{reviewerId}'
-    description: all review completed (both as a single and a group) by the user with ID reviewerId for the public film with ID filmId (get all)
+    description: all review completed (both as a single and a group) by the user with ID reviewerId for the public film with ID filmId (get all, delete single)
   - name: 'films/public/{filmId}/reviews/{reviewerId}/single'
     description: the review issued to or completed by the user as a single with ID reviewerId for the public film with ID filmId (get single, put to complete)
-  - name: 'films/public/{filmId}/reviews/toComplete/{reviewerId}'
-    description: the set of the reviews that the logged-in user has been invited to complete (get all)
- 
+
+  - name: reviews/toComplete
+    description: the review a user still needs to complete (get all) 
   - name: reviews/{reviewId}
     description: the review associated with ID reviewId (get single)
   - name: reviews/{reviewId}/group/drafts/closed
@@ -657,7 +657,7 @@ paths:
         - 'films/public/{filmId}/reviews/{reviewerId}'
       security:
         - cookieAuth: []
-      summary: Delete a review invitation
+      summary: Delete a review invitation (single and incompleted)
       description: The review of the film with ID filmId and issued to the user with ID reviewerId is deleted. This operation can only be performed by the owner, 
         and only if the review has not yet been completed by the reviewer.
       operationId: deleteSingleReview
@@ -692,37 +692,16 @@ paths:
         '500':
           description: Internal Server Error
           content: {}
-  '/api/films/public/{filmId}/reviews/toComplete/{reviewerId}' :
+  '/api/reviews/toComplete' :
     get:
       tags:
-        - films/public/{filmId}/reviews/toComplete/{reviewerId}
+        - reviews/toComplete
       security:
         - cookieAuth: []
       summary: Retrieve the reviews the user needs to complete (both started by him/herself and assigned by owner)
       description: >-
         The reviews that the logged-in user still has to completed are retrieved. A pagination mechanism is implemented to limit the size of messages.
       operationId: getUncompletedReviews
-      parameters:
-        - name: filmId
-          in: path
-          description: ID of the film whose review must be completed
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - name: reviewerId
-          in: path
-          description: ID of the user to whom the review has been issued
-          required: true
-          schema:
-            type: integer
-            format: int64
-        - in: query
-          name: pageNo
-          required: false
-          schema:
-            type: integer
-          description: 'The id of the requested page (if absent, the first page is returned)'
       responses:
         '200':
           description: Successful operation
