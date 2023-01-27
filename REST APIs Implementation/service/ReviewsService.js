@@ -5,6 +5,7 @@ const User = require('../components/user');
 const This =  require('../service/ReviewsService');
 const db = require('../components/db');
 var constants = require('../utils/constants.js');
+const { getSingleReview } = require('../controllers/ReviewsController');
 
 
 /**
@@ -312,10 +313,10 @@ exports.getSingleReview = function(filmId, reviewerId) {
             reject(404);
         }
         else if(loggedUser != rows[0].owner) {
-            reject(403);
+            reject(401);
         }
         else if(rows[0].private == 1) {
-            reject(404);
+            reject(403);
         }
         else {
             if ( usersArray.length == 1) { //check if a single review for film-user was already added
@@ -346,8 +347,6 @@ exports.getSingleReview = function(filmId, reviewerId) {
                 else {
                     var none = [];
                     const sql3 = 'select (case when min(minid) > 1 then 1 else coalesce(min(t.id) + 1, 0) end) as total from reviews t left outer join reviews t2 on t.id = t2.id - 1 cross join (select min(id) as minid from reviews t) const where t2.id is null;'
-                    //const sql3 = 'SELECT ISNULL(MIN(r.id), 0) + 1 id FROM reviews r LEFT OUTER JOIN reviews r2 ON r.id = r2.id -1  WHERE r2.id IS NULL';
-                    //const sql3 = 'SELECT count(*) as total FROM reviewers r, reviews v WHERE r.reviewId = v.id';
                     db.get(sql3, none, async function(err, size) {
                         if (err) {
                             reject(err);
@@ -398,47 +397,48 @@ exports.getSingleReview = function(filmId, reviewerId) {
  * - no response expected for this operation
  * 
  **/
- exports.updateSingleReview = function(review, filmId, reviewerId) {
-  return new Promise((resolve, reject) => {
 
-      const sql1 = "SELECT * FROM reviews WHERE filmId = ? AND reviewerId = ?";
-      db.all(sql1, [filmId, reviewerId], (err, rows) => {
-          if (err)
-              reject(err);
-          else if (rows.length === 0)
-              reject(404);
-          else if(reviewerId != rows[0].reviewerId) {
-              reject(403);
-          }
-          else {
-            var sql2 = 'UPDATE reviews SET completed = ?';
-            var parameters = [review.completed];
-            if(review.reviewDate != undefined){
-              sql2 = sql2.concat(', reviewDate = ?');
-              parameters.push(review.reviewDate);
-            } 
-            if(review.rating != undefined){
-                sql2 = sql2.concat(', rating = ?');
-                parameters.push(review.rating);
-            } 
-            if(review.review != undefined){
-                sql2 = sql2.concat(', review = ?');
-                parameters.push(review.review);
-            } 
-            sql2 = sql2.concat(' WHERE filmId = ? AND reviewerId = ?');
-            parameters.push(filmId);
-            parameters.push(reviewerId);
+exports.updateSingleReview = function(review, filmId, reviewerId) {
+    return new Promise((resolve, reject) => {
+        const sql = "SELECT r.reviewId, v.filmId, v.reviewType, r.reviewerId, v.completed, v.reviewDate, v.rating, v.review FROM reviewers r, reviews v WHERE r.reviewerId = ? AND r.reviewId = v.id AND v.filmId = ? AND v.reviewType = 0";
+        db.all(sql, [reviewerId, filmId], (err, rows) => {
+            if (err)
+                reject(err);
+            else if (rows.length === 0)
+                reject(404);
+            else if (rows.length != 1)
+                reject(500);
+            else if (rows[0].completed == 1)
+                reject(403);
+            else {
+                var sql2 = 'UPDATE reviews SET completed = ?';
+                var parameters = [review.completed];
+                if(review.reviewDate != undefined){
+                sql2 = sql2.concat(', reviewDate = ?');
+                parameters.push(review.reviewDate);
+                } 
+                if(review.rating != undefined){
+                    sql2 = sql2.concat(', rating = ?');
+                    parameters.push(review.rating);
+                } 
+                if(review.review != undefined){
+                    sql2 = sql2.concat(', review = ?');
+                    parameters.push(review.review);
+                } 
+                sql2 = sql2.concat(' WHERE id = ?');
+                parameters.push(rows[0].reviewId);
 
-            db.run(sql2, parameters, function(err) {
-              if (err) {
-              reject(err);
-              } else {
-              resolve(null);
+                db.run(sql2, parameters, function(err) {
+                    if (err) {
+                        reject(err);
+                    }
+                    else {
+                        resolve(null)
+                    }
+                })
             }
-           })
-          }
-      });
-  });
+        });
+    });
 }
 
 

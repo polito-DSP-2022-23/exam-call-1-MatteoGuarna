@@ -102,7 +102,6 @@ app.get('/api/films/private', isLoggedIn, filmController.getPrivateFilms);
 
 
 //TO MOD
-app.put('/api/films/public/:filmId/reviews/:reviewerId', isLoggedIn, reviewController.updateSingleReview);
 app.delete('/api/films/public/:filmId/reviews/:reviewerId', isLoggedIn, reviewController.deleteSingleReview);
 
 
@@ -110,6 +109,7 @@ app.delete('/api/films/public/:filmId/reviews/:reviewerId', isLoggedIn, reviewCo
 app.get('/api/films/public/:filmId/reviews', reviewController.getFilmReviews); //OK
 app.post('/api/films/public/:filmId/reviews', isLoggedIn, reviewController.issueFilmReview); //OK
 app.get('/api/films/public/:filmId/reviews/:reviewerId', reviewController.getReviewsByFilmAndReviewer); //OK
+app.put('/api/films/public/:filmId/reviews/:reviewerId', isLoggedIn, reviewController.updateSingleReview);
 app.get('/api/films/public/:filmId/reviews/:reviewerId/single', reviewController.getSingleReview); //OK
 
 app.get('/api/reviews/toComplete', isLoggedIn, reviewController.getUncompletedReviews); //OK
