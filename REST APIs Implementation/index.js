@@ -108,7 +108,7 @@ app.delete('/api/films/public/:filmId/reviews/:reviewerId', isLoggedIn, reviewCo
 
 //FIXED
 app.get('/api/films/public/:filmId/reviews', reviewController.getFilmReviews); //OK
-app.post('/api/films/public/:filmId/reviews', isLoggedIn, reviewController.issueFilmReview);
+app.post('/api/films/public/:filmId/reviews', isLoggedIn, reviewController.issueFilmReview); //OK
 app.get('/api/films/public/:filmId/reviews/:reviewerId', reviewController.getReviewsByFilmAndReviewer); //OK
 app.get('/api/films/public/:filmId/reviews/:reviewerId/single', reviewController.getSingleReview); //OK
 

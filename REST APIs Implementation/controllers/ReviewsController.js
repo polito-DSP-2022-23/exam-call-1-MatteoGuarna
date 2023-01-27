@@ -170,7 +170,7 @@ module.exports.issueFilmReview = function issueFilmReview (req, res, next) {
         utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'The user with ID reviewerId does not exist.' }], }, 404);
       }
       else if (response == 409.1){
-        utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'A single review was already assigned to this user for this film.' }], }, 404);
+        utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'A single review was already assigned to this user for this film.' }], }, 409);
       }
       else {
           utils.writeJson(res, {errors: [{ 'param': 'Server', 'msg': response }],}, 500);
