@@ -2,6 +2,7 @@
 
 const Review = require('../components/review');
 const User = require('../components/user');
+const This =  require('../service/ReviewsService');
 const db = require('../components/db');
 var constants = require('../utils/constants.js');
 
@@ -299,11 +300,11 @@ exports.getSingleReview = function(filmId, reviewerId) {
  * 
  **/
 
-/*
+
  exports.issueFilmReview = function(filmId, usersArray, loggedUser) {
   return new Promise((resolve, reject) => {
     const sql1 = "SELECT owner, private FROM films WHERE id = ?";
-    db.all(sql1, [filmId], (err, rows) => {
+    db.all(sql1, [filmId], async (err, rows) => {
         if (err){
             reject(err);
         }
@@ -317,6 +318,19 @@ exports.getSingleReview = function(filmId, reviewerId) {
             reject(404);
         }
         else {
+            if ( usersArray.length == 1) { //check if a single review for film-user was already added
+                try {
+                    await invertSingleReview(filmId,usersArray[0]);
+                }
+                catch(err){
+                        if (err == 409.1) reject(409.1)
+                        else reject(500);
+                        return;
+                    }
+
+                }
+            }
+
             var sql2 = 'SELECT * FROM users' ;
             for (var i = 0; i < usersArray.length; i++) {
                 if(i == 0) sql2 += ' WHERE id = ?';
@@ -330,23 +344,29 @@ exports.getSingleReview = function(filmId, reviewerId) {
                     reject(409);
                 }
                 else {
-                    const sql3 = 'SELECT coalesce(min(t.id) + 1, 0) id FROM reviews r LEFT OUTER JOIN reviews r2 ON r.id = r2.id - 1 WHERE r2.id IS NULL;'
-                    db.get(sql2, usersArray, async function(err, data) {
+                    var none = [];
+                    const sql3 = 'select (case when min(minid) > 1 then 1 else coalesce(min(t.id) + 1, 0) end) as total from reviews t left outer join reviews t2 on t.id = t2.id - 1 cross join (select min(id) as minid from reviews t) const where t2.id is null;'
+                    //const sql3 = 'SELECT ISNULL(MIN(r.id), 0) + 1 id FROM reviews r LEFT OUTER JOIN reviews r2 ON r.id = r2.id -1  WHERE r2.id IS NULL';
+                    //const sql3 = 'SELECT count(*) as total FROM reviewers r, reviews v WHERE r.reviewId = v.id';
+                    db.get(sql3, none, async function(err, size) {
                         if (err) {
                             reject(err);
                         }
                         else {
-                            var reviewId = data.id;
-                            const sql4 = 'INSERT INTO reviews(id, filmId, completed) VALUES(?,?,0)'
-                            const sql5 = 'INSERT INTO reviewers(reviewsId,reviewersId) VALUES(?,?)'
+                            var reviewId = size.total;
+                            var reviewType = usersArray.length > 1 ? 1 : 0;
+                            const sql4 = 'INSERT INTO reviews(id, filmId, reviewType, completed) VALUES(?,?,?,?)'
+                            const sql5 = 'INSERT INTO reviewers(reviewId,reviewerId) VALUES(?,?)'
                             try {
+
                                 await executeSQL('BEGIN TRANSACTION', []);
-                                await executeSQL('sql4',[reviewId,filmId]);
+                                await executeSQL(sql4,[reviewId,filmId,reviewType,0]);
                                 for (let user of usersArray) {
-                                    await executeSQL('sql5',[reviewId,user]);
+                                    await executeSQL(sql5,[reviewId,user]);
                                 }
                                 await executeSQL('COMMIT', []);
-
+                                var output = await This.getReviewById(reviewId);
+                                resolve(output);
                             }
                             catch(err){
                                 try {
@@ -360,13 +380,12 @@ exports.getSingleReview = function(filmId, reviewerId) {
                         }
                     })      
                 }
-            }); 
-          }
-      });
-  });
+            });
+        });
+    })
 }
 
-*/
+
 
 /**
  * Complete and update a review
@@ -556,14 +575,32 @@ const getReviewers = function(reviewId) {
 }
 
 
-  const executeSQL = function(sql3, params){
+  const executeSQL = function(sql, params){
     return new Promise((resolve, reject) => {
 
-        db.run(sql3, params, function(err) {
+        db.run(sql, params, function(err) {
             if (err) {
                 reject('500');
             }
             else resolve();
+        });
+    })
+}
+
+
+const invertSingleReview = function(filmId, reviewerId){
+    return new Promise((resolve, reject) => {
+        const sql = "SELECT count(*) as total FROM reviewers r, reviews v WHERE r.reviewerId = ? AND r.reviewId = v.id AND v.filmId = ? AND v.reviewType = 0";
+        db.get(sql, [reviewerId, filmId], (err, size) => {
+            if (err){
+                reject(err)
+            }
+            else if (size.total != 0){
+                reject(409.1)
+            }
+            else{
+                resolve()
+            }
         });
     })
 }

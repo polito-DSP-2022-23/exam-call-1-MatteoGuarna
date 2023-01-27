@@ -152,11 +152,10 @@ module.exports.deleteSingleReview = function deleteSingleReview (req, res, next)
     });
 };
 
-module.exports.issueFilmReview = function issueFilmReview (req, res, next) {
-    var film;
-
-    var usersArray = (req.body.id ? req.body.id : [req.user.id]);
-    Reviews.issueFilmReview(film.id, usersArray, req.user.id)
+module.exports.issueFilmReview = function issueFilmReview (req, res, next) { 
+    var body = JSON.parse(req.body);
+    var usersArray = (Array.isArray(body) && body.length > 0) ? body.slice() : [req.user.id];
+    Reviews.issueFilmReview(Number(req.params.filmId), usersArray, req.user.id)
     .then(function (response) {
       utils.writeJson(res, response, 201);
     })
@@ -169,6 +168,9 @@ module.exports.issueFilmReview = function issueFilmReview (req, res, next) {
       }
       else if (response == 409){
         utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'The user with ID reviewerId does not exist.' }], }, 404);
+      }
+      else if (response == 409.1){
+        utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'A single review was already assigned to this user for this film.' }], }, 404);
       }
       else {
           utils.writeJson(res, {errors: [{ 'param': 'Server', 'msg': response }],}, 500);
