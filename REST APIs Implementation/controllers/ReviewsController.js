@@ -140,11 +140,11 @@ module.exports.deleteSingleReview = function deleteSingleReview (req, res, next)
       if(response == "403A"){
         utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'The user is not the owner of the film' }], }, 403);
       }
-      else if(response == "403B"){
-        utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'The review has been already completed, so the invitation cannot be deleted anymore.' }], }, 403);
+      else if(response == 403){
+        utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'The review was already completed' }], }, 403);
       }
       else if (response == 404){
-        utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'The review does not exist.' }], }, 404);
+        utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'No single review exists with the given parameters.' }], }, 404);
       }
       else {
         utils.writeJson(res, {errors: [{ 'param': 'Server', 'msg': response }],}, 500);
@@ -171,7 +171,7 @@ module.exports.issueFilmReview = function issueFilmReview (req, res, next) {
       if(response == 401){
         utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'The user is not the owner of the film' }], }, 401);
       }
-      if(response == 403){
+      else if(response == 403){
         utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'The film is private' }], }, 403);
       }
       else if (response == 404){

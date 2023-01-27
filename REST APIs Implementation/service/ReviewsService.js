@@ -248,41 +248,42 @@ exports.getSingleReview = function(filmId, reviewerId) {
  * - no response expected for this operation
  * 
  **/
- exports.deleteSingleReview = function(filmId,reviewerId,owner) {
-  return new Promise((resolve, reject) => {
-      const sql1 = "SELECT owner, FROM films WHERE id = ? ";
-      db.all(sql1, [filmId], (err, rows) => {
-          if (err)
-              reject(err);
-          else if (rows.length === 0)
-              reject(404);
-          else if(owner != rows[0].owner) {
-              reject("403A");
-          }
-          else if(rows[0].completed == 1) {
-              reject("403B");
-          }
-          else {
-                const sql2 = "SELECT r.reviewId FROM r reviewers, v reviews WHERE reviewerId = ? AND r.reviewId = v.id AND v.filmId = ? AND v.reviewType = 0";
-                var reviewId = db.all(sql2, [reviewerId, filmId], (err, rows) => {
+
+exports.deleteSingleReview = function(filmId,reviewerId,owner) {
+    return new Promise((resolve, reject) => {
+        const sql1 = "SELECT owner FROM films WHERE id = ? ";
+        db.all(sql1, [filmId], (err, rows) => {
+            if (err)
+                reject(err);
+            else if (rows.length === 0)
+                reject(404);
+            else if(owner != rows[0].owner) {
+                reject("403A");
+            }
+            else {
+                var review;
+                const sql = "SELECT r.reviewId, v.filmId, v.reviewType, r.reviewerId, v.completed, v.reviewDate, v.rating, v.review FROM reviewers r, reviews v WHERE r.reviewerId = ? AND r.reviewId = v.id AND v.filmId = ? AND v.reviewType = 0";
+                db.all(sql, [reviewerId, filmId], (err, rows) => {
                     if (err)
                         reject(err);
                     else if (rows.length === 0)
                         reject(404);
+                    else if (rows.length != 1)
+                        reject(500);
+                    else if (rows[0].completed == 1)
+                        reject(403);
                     else {
-                        reviewerId = rows[0];
+                        review= rows[0];
+                        const sql3 = 'DELETE FROM reviews WHERE id = ?';
+                        db.run(sql3, [review.reviewId], (err) => {
+                            if (err) reject(err);
+                            else resolve(null);
+                })
                     }
                 })
-                const sql3 = 'DELETE FROM reviews WHERE id = ?';
-                db.run(sql3, [filmId, reviewerId], (err) => {
-                    if (err)
-                        reject(err);
-                    else
-                        resolve(null);
-              })
-          }
-      });
-  });
+            }
+        });
+    });
 
 }
 
@@ -308,15 +309,19 @@ exports.getSingleReview = function(filmId, reviewerId) {
     db.all(sql1, [filmId], async (err, rows) => {
         if (err){
             reject(err);
+            return;
         }
         else if (rows.length === 0){
             reject(404);
+            return;
         }
         else if(loggedUser != rows[0].owner) {
             reject(401);
+            return;
         }
         else if(rows[0].private == 1) {
             reject(403);
+            return;
         }
         else {
             if ( usersArray.length == 1) { //check if a single review for film-user was already added
@@ -330,56 +335,57 @@ exports.getSingleReview = function(filmId, reviewerId) {
                     }
 
                 }
-            }
+            
 
-            var sql2 = 'SELECT * FROM users' ;
-            for (var i = 0; i < usersArray.length; i++) {
-                if(i == 0) sql2 += ' WHERE id = ?';
-                else sql2 += ' OR id = ?'
-            }
-            db.all(sql2, usersArray, async function(err, rows) {
-                if (err) {
-                    reject(err);
-                } 
-                else if (rows.length !== usersArray.length){
-                    reject(409);
+                var sql2 = 'SELECT * FROM users' ;
+                for (var i = 0; i < usersArray.length; i++) {
+                    if(i == 0) sql2 += ' WHERE id = ?';
+                    else sql2 += ' OR id = ?'
                 }
-                else {
-                    var none = [];
-                    const sql3 = 'select (case when min(minid) > 1 then 1 else coalesce(min(t.id) + 1, 0) end) as total from reviews t left outer join reviews t2 on t.id = t2.id - 1 cross join (select min(id) as minid from reviews t) const where t2.id is null;'
-                    db.get(sql3, none, async function(err, size) {
-                        if (err) {
-                            reject(err);
-                        }
-                        else {
-                            var reviewId = size.total;
-                            var reviewType = usersArray.length > 1 ? 1 : 0;
-                            const sql4 = 'INSERT INTO reviews(id, filmId, reviewType, completed) VALUES(?,?,?,?)'
-                            const sql5 = 'INSERT INTO reviewers(reviewId,reviewerId) VALUES(?,?)'
-                            try {
-
-                                await executeSQL('BEGIN TRANSACTION', []);
-                                await executeSQL(sql4,[reviewId,filmId,reviewType,0]);
-                                for (let user of usersArray) {
-                                    await executeSQL(sql5,[reviewId,user]);
-                                }
-                                await executeSQL('COMMIT', []);
-                                var output = await This.getReviewById(reviewId);
-                                resolve(output);
+                db.all(sql2, usersArray, async function(err, rows) {
+                    if (err) {
+                        reject(err);
+                    } 
+                    else if (rows.length !== usersArray.length){
+                        reject(409);
+                    }
+                    else {
+                        var none = [];
+                        const sql3 = 'select (case when min(minid) > 1 then 1 else coalesce(min(t.id) + 1, 0) end) as total from reviews t left outer join reviews t2 on t.id = t2.id - 1 cross join (select min(id) as minid from reviews t) const where t2.id is null;'
+                        db.get(sql3, none, async function(err, size) {
+                            if (err) {
+                                reject(err);
                             }
-                            catch(err){
+                            else {
+                                var reviewId = size.total;
+                                var reviewType = usersArray.length > 1 ? 1 : 0;
+                                const sql4 = 'INSERT INTO reviews(id, filmId, reviewType, completed) VALUES(?,?,?,?)'
+                                const sql5 = 'INSERT INTO reviewers(reviewId,reviewerId) VALUES(?,?)'
                                 try {
-                                    await executeSQL('ROLLBACK TRANSACTION', []);
-                                    reject(err);
+
+                                    await executeSQL('BEGIN TRANSACTION', []);
+                                    await executeSQL(sql4,[reviewId,filmId,reviewType,0]);
+                                    for (let user of usersArray) {
+                                        await executeSQL(sql5,[reviewId,user]);
+                                    }
+                                    await executeSQL('COMMIT', []);
+                                    var output = await This.getReviewById(reviewId);
+                                    resolve(output);
                                 }
                                 catch(err){
-                                    reject(err);
+                                    try {
+                                        await executeSQL('ROLLBACK TRANSACTION', []);
+                                        reject(err);
+                                    }
+                                    catch(err){
+                                        reject(err);
+                                    }
                                 }
                             }
-                        }
-                    })      
-                }
-            });
+                        })      
+                    }
+                });
+            }
         });
     })
 }

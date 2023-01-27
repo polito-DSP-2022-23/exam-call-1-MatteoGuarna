@@ -100,17 +100,13 @@ app.post('/api/users/authenticator', userController.authenticateUser);
 app.get('/api/users/:userId', isLoggedIn, userController.getSingleUser);
 app.get('/api/films/private', isLoggedIn, filmController.getPrivateFilms);
 
-
-//TO MOD
-app.delete('/api/films/public/:filmId/reviews/:reviewerId', isLoggedIn, reviewController.deleteSingleReview);
-
-
-//FIXED
 app.get('/api/films/public/:filmId/reviews', reviewController.getFilmReviews); //OK
 app.post('/api/films/public/:filmId/reviews', isLoggedIn, reviewController.issueFilmReview); //OK
 app.get('/api/films/public/:filmId/reviews/:reviewerId', reviewController.getReviewsByFilmAndReviewer); //OK
-app.put('/api/films/public/:filmId/reviews/:reviewerId', isLoggedIn, reviewController.updateSingleReview);
+app.put('/api/films/public/:filmId/reviews/:reviewerId', isLoggedIn, reviewController.updateSingleReview); //OK
+app.delete('/api/films/public/:filmId/reviews/:reviewerId', isLoggedIn, reviewController.deleteSingleReview);
 app.get('/api/films/public/:filmId/reviews/:reviewerId/single', reviewController.getSingleReview); //OK
+
 
 app.get('/api/reviews/toComplete', isLoggedIn, reviewController.getUncompletedReviews); //OK
 app.get('/api/reviews/:reviewId', reviewController.getReviewById); //OK BUT TO MODIFY ONLY FOR COMPLETED REVIEWS
