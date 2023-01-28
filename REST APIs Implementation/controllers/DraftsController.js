@@ -68,17 +68,17 @@ module.exports.getOpenDraft = function getOpenDraft (req, res, next) {
 
 
 
-module.exports.getDraftsClosed = function getDraftsClosed (req, res, next) {
+module.exports.getClosedDrafts = function getClosedDrafts (req, res, next) {
 
     //retrieve a list of reviews
     var numOfDrafts = 0;
     var next=0;
 
-    Reviews.getDraftsClosedTotal(req.user.id, Number(req.params.reviewId))
+    Drafts.getClosedDraftsTotal(req.user.id, Number(req.params.reviewId))
       .then(function(response) {
         
         numOfDrafts = response;
-        Drafts.getDraftsClosed(req)
+        Drafts.getClosedDrafts(req)
         .then(function(response) {
           if (req.query.pageNo == null) var pageNo = 1;
           else var pageNo = req.query.pageNo;

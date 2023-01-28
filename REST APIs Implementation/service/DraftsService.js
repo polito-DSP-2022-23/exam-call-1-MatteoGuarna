@@ -119,7 +119,8 @@ exports.getOpenDraft = function(userId, reviewId) {
 }
 
 
-exports.getClosedDratfts = function(req) {
+exports.getClosedDrafts = function(req) {
+    var userId = req.user.id;
     return new Promise((resolve, reject) => {
         var drafts = [];
 
@@ -169,7 +170,7 @@ exports.getClosedDratfts = function(req) {
 
 
 
-exports.getClosedDratftsTotal = function(userId, reviewId) {
+exports.getClosedDraftsTotal = function(userId, reviewId) {
     return new Promise((resolve, reject) => {
 
         var sql1 = "SELECT id as draftId, authorId, contributorsId FROM drafts WHERE reviewId = ? AND open = 0";
@@ -184,7 +185,7 @@ exports.getClosedDratftsTotal = function(userId, reviewId) {
                 var n = 0;
                 for (var r of rows) {
                     var contributorsId = JSON.parse(r.contributorsId);
-                    if (contributorsId.includes(userId) || userId != r.authorId){
+                    if (contributorsId.includes(userId) || userId == r.authorId){
                         n +=1 ;
                     }
                 }
@@ -196,7 +197,7 @@ exports.getClosedDratftsTotal = function(userId, reviewId) {
 
 const createDraft = function(draft) {
     var open = (draft.open === 1) ? true : false;
-    return new Draft(draft.draftId, draft.reviewId, draft.authorId, draft.contributorsId, open, draft.draftDate, draft.rating, draft.review);
+    return new Draft(draft.draftId, draft.reviewId, draft.authorId, draft.contributorsId, open, draft.draftDate, draft.rating, draft.review, draft.responses);
 }
 
 
@@ -214,7 +215,7 @@ const getResponses = function(draftId, contributorsId) {
             }
             else{  
                 for (var r of rows) {
-                    if (!contributorsId.includes(r)) {
+                    if (!contributorsId.includes(r.responderId)) {
                         reject(500.1);
                         return;
                     }

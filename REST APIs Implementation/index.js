@@ -110,8 +110,9 @@ app.get('/api/films/public/:filmId/reviews/:reviewerId/single', reviewController
 
 
 app.get('/api/reviews/toComplete', isLoggedIn, reviewController.getUncompletedReviews); //OK
-app.get('/api/reviews/:reviewId', reviewController.getReviewById); //OK BUT TO MODIFY ONLY FOR COMPLETED REVIEWS
-app.get('/api/reviews/:reviewId/group/drafts/open', isLoggedIn, DraftsController.getOpenDraft);
+app.get('/api/reviews/:reviewId', reviewController.getReviewById); //OK
+app.get('/api/reviews/:reviewId/group/drafts/open', isLoggedIn, DraftsController.getOpenDraft); //OK
+app.get('/api/reviews/:reviewId/group/drafts/closed', isLoggedIn, DraftsController.getClosedDrafts);
 
 //TO DELETE
 app.get('/api/films/public/invited', isLoggedIn, filmController.getInvitedFilms);
