@@ -447,7 +447,7 @@ exports.updateSingleReview = function(review, filmId, reviewerId) {
                         reject(err);
                     }
                     else {
-                        resolve(null)
+                        resolve(null);
                     }
                 })
             }

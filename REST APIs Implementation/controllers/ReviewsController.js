@@ -3,7 +3,7 @@
 var utils = require('../utils/writer.js');
 var Reviews = require('../service/ReviewsService');
 var constants = require('../utils/constants.js');
-var Films = require('../service/FilmsService');
+var Date = require('../components/date');
 
 module.exports.getFilmReviews = function getFilmReviews (req, res, next) {
 
@@ -196,18 +196,34 @@ module.exports.issueFilmReview = function issueFilmReview (req, res, next) {
 };
 
 module.exports.updateSingleReview = function updateSingleReview (req, res, next) {
-  var body = JSON.parse(req.body);
+
+  var body;
+  try{
+    body = JSON.parse(req.body);
+  }
+  catch(err){
+    body = req.body;
+  }
   
   if(req.params.reviewerId != req.user.id){
     utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'The reviewerId is not equal the id of the requesting user.' }], }, 400);
   }
-  else if(body.completed == undefined) {
-    utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'The completed property is absent.' }], }, 400);
+  else if(body.completed == undefined || body.review == undefined || body.rating == undefined) {
+    utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'unknown format, a JSON Draft object with following fields: \'completed\', \'rating\', \'review\' is supposed to be received' }], }, 400);
   }
   else if(body.completed == false) {
     utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'The completed property is false, but it should be set to true.' }], }, 400);
   }
+  else if(body.rating > 10 || body.rating < 0) {
+    utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'Rating is supposed to be an integer bewteen 0 and 10.' }], }, 400);
+  }
   else {
+    body = {
+      completed : body.completed,
+      reviewDate : Date.createDate(),
+      rating : body.rating,
+      review : body.review,
+    }
     Reviews.updateSingleReview(body, req.params.filmId, req.params.reviewerId)
     .then(function(response) {
         utils.writeJson(res, response, 204);
