@@ -43,7 +43,8 @@ module.exports.getFilmReviews = function getFilmReviews (req, res, next) {
           }
       })
       .catch(function(response) {
-          utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': response }], }, 500);
+        if(response == 404) utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'The are no public review completed and available.' }], }, 404);
+        else utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': response }], }, 500);
       });
     })
     .catch(function(response) {
@@ -160,15 +161,21 @@ module.exports.deleteSingleReview = function deleteSingleReview (req, res, next)
 
 module.exports.issueFilmReview = function issueFilmReview (req, res, next) {
   var body;
+  var usersArray;
     try {
       body = JSON.parse(req.body);
-      body = body.users;
     }
     catch(err){
-      utils.writeJson(res, { errors: [{  'param': 'Server', 'msg':'unknown format, a JSON object with key \"users\" andcontaining an array is required' }], }, 400);
+      body = req.body;
+    }
+    if (Object.keys(body).length === 0) {
+      usersArray = [req.user.id];
+    }
+    else if (body.users == undefined || !Array.isArray(body.users) || body.users.length == 0) {
+      utils.writeJson(res, { errors: [{  'param': 'Server', 'msg':'unknown format, a JSON object with key \'users\' and a corresponding array is required' }], }, 400);
       return;
     }
-    var usersArray = (Array.isArray(body) && body.length > 0) ? body.slice() : [req.user.id];
+    else usersArray = body.users.slice();
     Reviews.issueFilmReview(Number(req.params.filmId), usersArray, req.user.id)
     .then(function (response) {
       utils.writeJson(res, response, 201);
@@ -279,7 +286,12 @@ module.exports.getUncompletedReviews = function getUncompletedReviews (req, res,
         }
     })
     .catch(function(response) {
+      if (response == 404){
+        utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'No review to complete exists with the given parameters.' }], }, 404);
+    }
+    else {
         utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': response }], }, 500);
+    }
     });
   })
   .catch(function(response) {

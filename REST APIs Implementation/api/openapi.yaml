@@ -29,12 +29,12 @@ tags:
   - name: 'films/public/{filmId}/reviews'
     description: the reviews issued for the public film with ID filmId (post new, get all)
   - name: 'films/public/{filmId}/reviews/{reviewerId}'
-    description: all review completed (both as a single and a group) by the user with ID reviewerId for the public film with ID filmId (get all, delete single)
+    description: all reviews completed (both as a single and a group) by the user with ID reviewerId for the public film with ID filmId (get all)
   - name: 'films/public/{filmId}/reviews/{reviewerId}/single'
-    description: the review issued to or completed by the user as a single with ID reviewerId for the public film with ID filmId (get single, put to complete)
+    description: the review issued to or completed by the user as a single with ID reviewerId for the public film with ID filmId (get single, put to complete, delete single)
 
   - name: reviews/toComplete
-    description: the review a user still needs to complete (get all) 
+    description: the reviews a user still needs to complete (get all) 
   - name: reviews/{reviewId}
     description: the review associated with ID reviewId (get single)
   - name: reviews/{reviewId}/group/drafts/closed
@@ -394,7 +394,10 @@ paths:
         - cookieAuth: []
       summary: Assign automatically a review for a public film with ID filmId, to the users specified in the request body
       description: >-
-        A film with ID filmId is automatically assigned to the user or users specifiedas an array in the request body. Only authenticated users can make this request.
+        A film with ID filmId is automatically assigned to the user or users specifiedas an array in the request body. 
+        Only authenticated users can make this request.
+        Only the owner of the film can assing a review.
+        If body is absent the operation is performed on the userId
       operationId: issueFilmReview
       parameters:
         - name: filmId
@@ -405,14 +408,17 @@ paths:
             type: integer
             format: int64
       requestBody:
-        description: The ID of the user or users whom the review is assigned (array is required also for single element)
+        description: An object referencting ID of the user or users whom the review is assigned (an array is required also for single element)
         content:
           application/json:
             schema:
-              type: array
-              items:
-                type: integer
-                format: int64
+              type: object
+              properties:
+                users:
+                  type: array
+                  items:
+                    type: integer
+                    format: int64
       responses:
         '201':
           description: Created
@@ -654,7 +660,7 @@ paths:
           content: {}
     delete:
       tags:
-        - 'films/public/{filmId}/reviews/{reviewerId}'
+        - 'films/public/{filmId}/reviews/{reviewerId}/single'
       security:
         - cookieAuth: []
       summary: Delete a review invitation (single and incompleted)
@@ -726,6 +732,9 @@ paths:
         '401':
           description: Unauthorized
           content: {}
+        '404':
+          description: Not Found
+          content: {}
         '500':
           description: Internal Server Error
           content: {}
@@ -735,7 +744,8 @@ paths:
         - 'reviews/{reviewId}'
       summary: Retrieve a review by its ID reviewId
       description: >-
-        The review given its ID reviewId. This operation does not require authentication. 
+        The review given its ID reviewId. This operation does not necessarily require authentication, but in that case it returns only the public reviews. 
+        Otherwise, it returns those which are available to the user.
       operationId: getReviewById
       parameters:
         - name: reviewId
@@ -752,6 +762,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Review'
+        '401':
+          description: Unauthorized
+          content: {}
+        '403':
+          description: Forbidden
+          content: {}
         '404':
           description: Not Found
           content: {}
@@ -766,7 +782,7 @@ paths:
         - cookieAuth: []
       summary: Retrieve the list of all the drafts that have been closed for a review 
       description: >-
-        All the drafts that have been closed for a review. A pagination mechanism is implemented to limit the size of messages.
+        All the drafts that have been closed for a review, and the relative responses are returned. A pagination mechanism is implemented to limit the size of messages.
       operationId: getClosedDrafts
       parameters:
         - name: reviewId
@@ -808,6 +824,9 @@ paths:
         '401':
           description: Unauthorized
           content: {}
+        '403':
+          description: Forbidden
+          content: {}
         '404':
           description: Not Found
           content: {}
@@ -820,7 +839,7 @@ paths:
         - 'reviews/{reviewId}/group/drafts/open'
       security:
         - cookieAuth: []
-      summary: Create a new draft for a group review 
+      summary: Creates a new draft for a group review 
       description: A new draft for the review with ID reviewID is created. The operation is only valid for group reviews, 
         and if there are not already open drafts for the same review.
       operationId: issueDraft
@@ -859,7 +878,7 @@ paths:
           description: Not Found
           content: {}
         '409':
-          description: Conflict (an open draft altready exists)
+          description: Conflict (e.g. an open draft altready exists)
           content: {}
         '500':
           description: Internal Server Error
@@ -906,9 +925,11 @@ paths:
         - 'reviews/{reviewId}/group/drafts/open/responses'
       security:
         - cookieAuth: []
-      summary: Add a response to a draft of a group review
+      summary: Adds a response to a draft of a group review
       description: A new response to the draft the group review with ID reviewId. 
-        This operation is only allowed once per user on each draft and only for not completed reviews..
+        This operation is only allowed once per user on each draft and only for not completed reviews.
+        If the user is the last of the group to issue a response, the system authomatically performs an update on the draft, by closing it, 
+        and if all responses are positive, it updates the review by completing it with the information available from the open draft.
       operationId: issueResponse
       parameters:
         - name: reviewId
@@ -939,7 +960,7 @@ paths:
           description: Unauthorized
           content: {}
         '403':
-          description: Forbidden (review was already completed)
+          description: Forbidden
           content: {}
         '404':
           description: Not Found
@@ -1165,9 +1186,10 @@ components:
           type: string
           format: uri
       required:
-      - filmId
-      - reviewerId
-      - reviewType
+      - completed
+      - reviewDate
+      - rating
+      - review
     Draft:
       description: schema for Draft data structures
       type: object
@@ -1245,8 +1267,7 @@ components:
           type: string
           format: uri
       required:
-      - draftId
-      - responderId
+      - agree
   securitySchemes:
     cookieAuth:
       description: JWT to identify the authenticated user.

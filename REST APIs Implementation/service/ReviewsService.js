@@ -28,6 +28,10 @@ var constants = require('../utils/constants.js');
             if (err) {
                 reject(err);
             }
+            if(rows.length == 0) {
+                reject(404);
+                return;
+            }
             for (var row of rows) {
                 //edit each review by adding the array of IDs of the reviewers for that review
                 try{
@@ -479,9 +483,12 @@ exports.getUncompletedReviews = function(req) {
         db.all(sql, params, async (err, rows) => {
             if (err) {
                 reject(err);
+                return;
             }
-            //resolve(params);
-            //return;
+            else if (rows.length == 0) {
+                reject(404);
+                return;
+            }
             for (var row of rows) {
                 //edit each review by adding the array of IDs of the reviewers for that review
                 try{

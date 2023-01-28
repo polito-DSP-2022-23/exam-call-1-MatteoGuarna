@@ -56,6 +56,8 @@ if(req.isAuthenticated()) {
 var filmSchema = JSON.parse(fs.readFileSync(path.join('.', 'json_schemas', 'film_schema.json')).toString());
 var userSchema = JSON.parse(fs.readFileSync(path.join('.', 'json_schemas', 'user_schema.json')).toString());
 var reviewSchema = JSON.parse(fs.readFileSync(path.join('.', 'json_schemas', 'review_schema.json')).toString());
+var draftSchema = JSON.parse(fs.readFileSync(path.join('.', 'json_schemas', 'draft_schema.json')).toString());
+var responseSchema = JSON.parse(fs.readFileSync(path.join('.', 'json_schemas', 'response_schema.json')).toString());
 var validator = new Validator({ allErrors: true });
 validator.ajv.addSchema([userSchema, filmSchema, reviewSchema]);
 const addFormats = require('ajv-formats').default;
@@ -104,17 +106,17 @@ app.get('/api/films/private', isLoggedIn, filmController.getPrivateFilms);
 app.get('/api/films/public/:filmId/reviews', reviewController.getFilmReviews);
 app.post('/api/films/public/:filmId/reviews', isLoggedIn, reviewController.issueFilmReview);
 app.get('/api/films/public/:filmId/reviews/:reviewerId', reviewController.getReviewsByFilmAndReviewer);
-app.put('/api/films/public/:filmId/reviews/:reviewerId', isLoggedIn, reviewController.updateSingleReview); 
-app.delete('/api/films/public/:filmId/reviews/:reviewerId', isLoggedIn, reviewController.deleteSingleReview);
 app.get('/api/films/public/:filmId/reviews/:reviewerId/single', reviewController.getSingleReview);
+app.put('/api/films/public/:filmId/reviews/:reviewerId/single', isLoggedIn, validate({ body: reviewSchema }), reviewController.updateSingleReview); 
+app.delete('/api/films/public/:filmId/reviews/:reviewerId/single', isLoggedIn, reviewController.deleteSingleReview);
 
 
-app.get('/api/reviews/toComplete', isLoggedIn, reviewController.getUncompletedReviews); //OK
-app.get('/api/reviews/:reviewId', reviewController.getReviewById); //OK
-app.get('/api/reviews/:reviewId/group/drafts/closed', isLoggedIn, DraftsController.getClosedDrafts); //OK
-app.get('/api/reviews/:reviewId/group/drafts/open', isLoggedIn, DraftsController.getOpenDraft); //OK
-app.post('/api/reviews/:reviewId/group/drafts/open', isLoggedIn, DraftsController.issueDraft); //OK
-app.post('/api/reviews/:reviewId/group/drafts/open/responses', isLoggedIn, DraftsController.issueResponse); //OK
+app.get('/api/reviews/toComplete', isLoggedIn, reviewController.getUncompletedReviews); 
+app.get('/api/reviews/:reviewId', reviewController.getReviewById); 
+app.get('/api/reviews/:reviewId/group/drafts/closed', isLoggedIn, DraftsController.getClosedDrafts);
+app.get('/api/reviews/:reviewId/group/drafts/open', isLoggedIn, DraftsController.getOpenDraft); 
+app.post('/api/reviews/:reviewId/group/drafts/open', isLoggedIn, validate({ body: draftSchema }), DraftsController.issueDraft);
+app.post('/api/reviews/:reviewId/group/drafts/open/responses', isLoggedIn, validate({ body: responseSchema}), DraftsController.issueResponse); 
 
 
 // Error handlers for validation and authentication errors

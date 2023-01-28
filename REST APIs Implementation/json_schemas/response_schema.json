@@ -1,0 +1,57 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id" : "http://www.my-schema.com/response_schema.json",
+    "title": "Response",
+    "description": "JSON Schema for Response data structures",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "$schema": {
+        "type": "string",
+        "description": "path to the JSON Schema to use for the validation of the data structure"
+      },
+      "draftId": {
+        "type": "integer",
+        "description": "unique identifier of the draft for which this response has been issued"
+      },
+      "responderId": {
+        "type": "integer",
+        "description": "unique identifier of the the user has received this draft and whose response is needed"
+      },
+      "agree": {
+        "type": "boolean",
+        "description": "true if the draft has been accepted, false otherwise",
+        "default": "true"
+      },
+      "response": {
+        "type": "string",
+        "description": "a textual description of the response, used ONLY if agree is false",
+        "maxLength": 1000
+      }
+    },
+    "required": ["agree"],
+    "dependencies": {
+      "agree": {
+        "oneOf": [
+          {
+            "properties": {
+              "agree": {
+                "const": true
+              }
+            }
+          },
+          {
+            "properties": {
+              "agree": {
+                "const": false  
+              }
+            },
+            "required": [
+              "response"
+            ]
+          }
+        ]
+      }
+    }
+  }
+  
