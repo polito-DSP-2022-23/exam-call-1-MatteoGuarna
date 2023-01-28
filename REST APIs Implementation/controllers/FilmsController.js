@@ -1,5 +1,3 @@
-//module.exports.getInvitedFilms NEEDS TO BE DELETED AND REPLACED WITH A FUNCTION RETURNING REVIEWS ASSIGNED INSTEAD OF FILMS WHOSE REVIEW IS ASSIGNED
-
 'use strict';
 
 var utils = require('../utils/writer.js');
@@ -16,7 +14,7 @@ module.exports.getPublicFilms = function getPublicFilms (req, res, next) {
             Films.getPublicFilms(req)
             .then(function(response) {
                 if (req.query.pageNo == null) var pageNo = 1;
-                else var pageNo = req.query.pageNo;
+                else var pageNo = Number(req.query.pageNo);
                 var totalPage=Math.ceil(numOfFilms / constants.OFFSET);
                 next = Number(pageNo) + 1;
                 if (pageNo>totalPage) {
@@ -49,60 +47,9 @@ module.exports.getPublicFilms = function getPublicFilms (req, res, next) {
         })
         .catch(function(response) {
           utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': response }], }, 500);
-      });
-  
-  
-    
-  };
-  //I'M GONNA DELETE YOU!
-  module.exports.getInvitedFilms = function getInvitedFilms (req, res, next) {
-    var numOfFilms = 0;
-    var next=0;
-  
-    Films.getInvitedFilmsTotal(req.user.id)
-        .then(function(response) {
-            numOfFilms = response;
-            Films.getInvitedFilms(req)
-            .then(function(response) {
-                if (req.query.pageNo == null) var pageNo = 1;
-                else var pageNo = req.query.pageNo;
-                var totalPage=Math.ceil(numOfFilms / constants.OFFSET);
-                next = Number(pageNo) + 1;
-                if (pageNo>totalPage) {
-                    utils.writeJson(res, {
-                        totalPages: totalPage,
-                        currentPage: pageNo,
-                        totalItems: numOfFilms,
-                        films: {}
-                    });
-                } else if (pageNo == totalPage) {
-                    utils.writeJson(res, {
-                        totalPages: totalPage,
-                        currentPage: pageNo,
-                        totalItems: numOfFilms,
-                        films: response
-                    });
-                } else {
-                    utils.writeJson(res, {
-                        totalPages: totalPage,
-                        currentPage: pageNo,
-                        totalItems: numOfFilms,
-                        films: response,
-                        next: "/api/films/public/invited?pageNo=" + next
-                    });
-                }
-        })
-        .catch(function(response) {
-            utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': response }], }, 500);
-        });
-        })
-        .catch(function(response) {
-          utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': response }], }, 500);
-      });
-  
-  
-    
-  };
+      })    
+};
+ 
   
   module.exports.getPrivateFilms = function getPrivateFilms (req, res, next) {
       var numOfFilms = 0;
@@ -114,7 +61,7 @@ module.exports.getPublicFilms = function getPublicFilms (req, res, next) {
               Films.getPrivateFilms(req)
               .then(function(response) {
                   if (req.query.pageNo == null) var pageNo = 1;
-                  else var pageNo = req.query.pageNo;
+                  else var pageNo = Number(req.query.pageNo);
                   var totalPage=Math.ceil(numOfFilms / constants.OFFSET);
                   next = Number(pageNo) + 1;
                   if (pageNo>totalPage) {

@@ -18,7 +18,7 @@ module.exports.getFilmReviews = function getFilmReviews (req, res, next) {
         Reviews.getFilmReviews(req)
         .then(function(response) {
           if (req.query.pageNo == null) var pageNo = 1;
-          else var pageNo = req.query.pageNo;
+          else var pageNo = Number(req.query.pageNo);
           var totalPage = Math.ceil(numOfReviews / constants.OFFSET);
           next = Number(pageNo) + 1;
           if (pageNo > totalPage) {
@@ -64,7 +64,7 @@ module.exports.getReviewsByFilmAndReviewer = function getReviewsByFilmAndReviewe
     Reviews.getReviewsByFilmAndReviewer(req)
     .then(function(response) {
       if (req.query.pageNo == null) var pageNo = 1;
-      else var pageNo = req.query.pageNo;
+      else var pageNo = Number(req.query.pageNo);
       var totalPage = Math.ceil(numOfReviews / constants.OFFSET);
       next = Number(pageNo) + 1;
       if (pageNo > totalPage) {
@@ -254,7 +254,7 @@ module.exports.getUncompletedReviews = function getUncompletedReviews (req, res,
       Reviews.getUncompletedReviews(req)
       .then(function(response) {
         if (req.query.pageNo == null) var pageNo = 1;
-        else var pageNo = req.query.pageNo;
+        else var pageNo = Number(req.query.pageNo);
         var totalPage = Math.ceil(numOfReviews / constants.OFFSET);
         next = Number(pageNo) + 1;
         if (pageNo > totalPage) {

@@ -299,34 +299,6 @@ var constants = require('../utils/constants.js');
   });
 }
 
-/**
- * Retrieve the public films for which the user has received a review invitation
- * 
- * Input: 
- * - req: the request of the user
- * Output:
- * - list of the public films for which the user has received a review invitation
- * 
- **/
- exports.getInvitedFilms = function(req) {
-    return new Promise((resolve, reject) => {
-  
-      var sql = "SELECT f.id as fid, f.title, f.owner, f.private, f.watchDate, f.rating, f.favorite, c.total_rows FROM films f, reviews r, (SELECT count(*) total_rows FROM films f2, reviews r2 WHERE f2.private=0 AND f2.id = r2.filmId AND r2.reviewerId = ?) c WHERE  f.private = 0 AND f.id = r.filmId AND r.reviewerId = ?"
-      var limits = getPagination(req);
-      if (limits.length != 0) sql = sql + " LIMIT ?,?";
-      limits.unshift(req.user.id);
-      limits.unshift(req.user.id);
-  
-      db.all(sql, limits, (err, rows) => {
-          if (err) {
-              reject(err);
-          } else {
-              let films = rows.map((row) => createFilm(row));
-              resolve(films);
-          }
-      });
-    });
-  }
 
 /**
  * Retrieve the private films of an user with ID userId

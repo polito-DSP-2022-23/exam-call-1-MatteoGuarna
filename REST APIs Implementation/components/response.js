@@ -1,6 +1,6 @@
 class Response{    
     constructor(responderId, agree, response) {
-        this.responderId = responderId;
+        this.responderId =responderId; 
         this.agree = agree;
 
 
