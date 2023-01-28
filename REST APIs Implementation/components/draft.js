@@ -13,7 +13,7 @@ class Draft{
         if(!open)
             this.responses = responses.slice();
         
-        var selfLink = "api/reviews/" +  this.reviewId + "/group/drafts/" + (open? "open" : "closed");
+        var selfLink = "/api/reviews/" +  this.reviewId + "/group/drafts/" + (open? "open" : "closed");
         this.self =  selfLink;
     }
 }

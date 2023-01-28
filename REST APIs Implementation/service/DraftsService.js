@@ -179,7 +179,7 @@ exports.getClosedDraftsTotal = function(userId, reviewId) {
                 reject(err);
             }
             else if(rows.length == 0) {
-                resolve(0); //no draft found
+                reject(404); //no draft found
             }
             else{
                 var n = 0;

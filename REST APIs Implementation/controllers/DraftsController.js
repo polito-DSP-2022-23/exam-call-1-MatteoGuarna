@@ -106,11 +106,27 @@ module.exports.getClosedDrafts = function getClosedDrafts (req, res, next) {
           }
       })
       .catch(function(response) {
+        if (response == 403){
+          utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'The user does not partecipate to the group review.' }], }, 403);
+        }
+        else if (response == 404){
+          utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'The draft does not exist.' }], }, 404);
+        }
+        else if (response == 500.1){
+          utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'Internal inconsistency inside the DB.' }], }, 500);
+        }
+        else {
           utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': response }], }, 500);
+        }
       });
     })
     .catch(function(response) {
-      utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': response }], }, 500);
+      if (response == 404){
+        utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'The draft does not exist.' }], }, 404);
+      }
+      else {
+        utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': response }], }, 500);
+      }
   });
   
 };

@@ -5,7 +5,7 @@ class Response{
 
 
         if(response)
-            this.response; 
+            this.response = response; 
     }
 }
 
