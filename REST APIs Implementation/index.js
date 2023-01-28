@@ -16,6 +16,7 @@ var session = require('express-session');
 var userController = require(path.join(__dirname, 'controllers/UsersController'));
 var filmController = require(path.join(__dirname, 'controllers/FilmsController'));
 var reviewController = require(path.join(__dirname, 'controllers/ReviewsController'));
+var DraftsController = require(path.join(__dirname, 'controllers/DraftsController'));
 
 /** Set up and enable Cross-Origin Resource Sharing (CORS) **/
 
@@ -100,16 +101,17 @@ app.post('/api/users/authenticator', userController.authenticateUser);
 app.get('/api/users/:userId', isLoggedIn, userController.getSingleUser);
 app.get('/api/films/private', isLoggedIn, filmController.getPrivateFilms);
 
-app.get('/api/films/public/:filmId/reviews', reviewController.getFilmReviews); //OK
-app.post('/api/films/public/:filmId/reviews', isLoggedIn, reviewController.issueFilmReview); //OK
-app.get('/api/films/public/:filmId/reviews/:reviewerId', reviewController.getReviewsByFilmAndReviewer); //OK
-app.put('/api/films/public/:filmId/reviews/:reviewerId', isLoggedIn, reviewController.updateSingleReview); //OK
+app.get('/api/films/public/:filmId/reviews', reviewController.getFilmReviews);
+app.post('/api/films/public/:filmId/reviews', isLoggedIn, reviewController.issueFilmReview);
+app.get('/api/films/public/:filmId/reviews/:reviewerId', reviewController.getReviewsByFilmAndReviewer);
+app.put('/api/films/public/:filmId/reviews/:reviewerId', isLoggedIn, reviewController.updateSingleReview); 
 app.delete('/api/films/public/:filmId/reviews/:reviewerId', isLoggedIn, reviewController.deleteSingleReview);
-app.get('/api/films/public/:filmId/reviews/:reviewerId/single', reviewController.getSingleReview); //OK
+app.get('/api/films/public/:filmId/reviews/:reviewerId/single', reviewController.getSingleReview);
 
 
 app.get('/api/reviews/toComplete', isLoggedIn, reviewController.getUncompletedReviews); //OK
 app.get('/api/reviews/:reviewId', reviewController.getReviewById); //OK BUT TO MODIFY ONLY FOR COMPLETED REVIEWS
+app.get('/api/reviews/:reviewId/group/drafts/open', isLoggedIn, DraftsController.getOpenDraft);
 
 //TO DELETE
 app.get('/api/films/public/invited', isLoggedIn, filmController.getInvitedFilms);

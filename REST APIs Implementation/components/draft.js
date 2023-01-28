@@ -3,17 +3,17 @@ class Draft{
         this.draftId = draftId;
         this.reviewId = reviewId;
         this.authorId = authorId;
-        this.contributorsId = contributorsId;
+        this.contributorsId = contributorsId.slice();
         this.open = open;
         this.draftDate = draftDate;
         this.rating = rating;
         this.review = review;
 
 
-        if(responses)
-            this.responses = responses;
+        if(!open)
+            this.responses = responses.slice();
         
-        var selfLink = "api/reviews/" +  this.draftId + (open? "/open" + this.id : "/group/drafts/closed");
+        var selfLink = "api/reviews/" +  this.reviewId + "/group/drafts/" + (open? "open" : "closed");
         this.self =  selfLink;
     }
 }

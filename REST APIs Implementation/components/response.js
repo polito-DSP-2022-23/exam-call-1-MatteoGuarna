@@ -1,14 +1,12 @@
-class response{    
-    constructor(draftId, responderId, agree, response) {
-        this.draftId = draftId;
+class Response{    
+    constructor(responderId, agree, response) {
         this.responderId = responderId;
         this.agree = agree;
 
 
-        if(!agree)
-            this.response = response;
-        
+        if(response)
+            this.response; 
     }
 }
 
-module.exports = Draft;
+module.exports = Response;

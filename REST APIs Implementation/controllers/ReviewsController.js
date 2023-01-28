@@ -115,12 +115,18 @@ module.exports.getSingleReview = function getSingleReview (req, res, next) {
 
 module.exports.getReviewById = function getReviewById (req, res, next) {
   
-  Reviews.getReviewById(req.params.reviewId)
+  Reviews.getReviewById(req.params.reviewId, req.user)
   .then(function(response) {
       utils.writeJson(res, response);
   })
   .catch(function(response) {
-      if (response == 404){
+      if (response == 401){
+        utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'Not authorized.' }], }, 401);
+      }
+      else if (response == 403){
+        utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'The user lacks the rights to access the review.' }], }, 403);
+      }
+      else if (response == 404){
           utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'The review does not exist.' }], }, 404);
       }
       else {
@@ -252,7 +258,7 @@ module.exports.getUncompletedReviews = function getUncompletedReviews (req, res,
             currentPage: pageNo,
             totalItems: numOfReviews,
             reviews: response,
-            next: "/api/films/public/" + req.params.filmId + "/reviews/toComplete/" + req.params+ "?pageNo=" + next
+            next: "/api/reviews/toComplete" + "?pageNo=" + next
           });
         }
     })

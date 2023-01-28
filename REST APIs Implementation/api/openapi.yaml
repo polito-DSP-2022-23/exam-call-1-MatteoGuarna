@@ -1216,9 +1216,6 @@ components:
           type: string
           format: uri
       required:
-      - reviewId
-      - authorId
-      - contributorsId
       - draftDate
       - rating
       - review

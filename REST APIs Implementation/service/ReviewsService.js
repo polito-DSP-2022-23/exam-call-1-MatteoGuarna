@@ -5,7 +5,6 @@ const User = require('../components/user');
 const This =  require('../service/ReviewsService');
 const db = require('../components/db');
 var constants = require('../utils/constants.js');
-const { getSingleReview } = require('../controllers/ReviewsController');
 
 
 /**
@@ -199,7 +198,7 @@ exports.getSingleReview = function(filmId, reviewerId) {
  * - the requested review
  * 
  **/
- exports.getReviewById = function(reviewId) {
+ exports.getReviewById = function(reviewId,user) {
 
     return new Promise(async (resolve, reject) => {
         var review;
@@ -210,9 +209,16 @@ exports.getSingleReview = function(filmId, reviewerId) {
             else if (rows.length === 0)
                 reject(404);
             else {
-
                 try{
                     var reviewers = await getReviewers(reviewId);
+                    if(user!= "bypass" && user == undefined && !rows[0].completed){
+                        reject(401);
+                        return;
+                    }
+                    if(user!= "bypass" && !reviewers.includes(user.id) && !rows[0].completed){
+                        reject(403);
+                        return;
+                    }
                     review = {
                         reviewId : rows[0].reviewId,
                         filmId : rows[0].filmId,
@@ -227,7 +233,9 @@ exports.getSingleReview = function(filmId, reviewerId) {
                     resolve(review);
                 }
                 catch(err){
-                    reject(404);
+                    if (err == 404) reject(404);
+                    else if (err == 403) reject(403);
+                    else reject(500);
                     return;
                 }
             }
@@ -369,7 +377,7 @@ exports.deleteSingleReview = function(filmId,reviewerId,owner) {
                                         await executeSQL(sql5,[reviewId,user]);
                                     }
                                     await executeSQL('COMMIT', []);
-                                    var output = await This.getReviewById(reviewId);
+                                    var output = await This.getReviewById(reviewId, "bypass");
                                     resolve(output);
                                 }
                                 catch(err){
