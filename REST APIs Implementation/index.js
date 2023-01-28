@@ -111,8 +111,10 @@ app.get('/api/films/public/:filmId/reviews/:reviewerId/single', reviewController
 
 app.get('/api/reviews/toComplete', isLoggedIn, reviewController.getUncompletedReviews); //OK
 app.get('/api/reviews/:reviewId', reviewController.getReviewById); //OK
+app.get('/api/reviews/:reviewId/group/drafts/closed', isLoggedIn, DraftsController.getClosedDrafts); //OK
 app.get('/api/reviews/:reviewId/group/drafts/open', isLoggedIn, DraftsController.getOpenDraft); //OK
-app.get('/api/reviews/:reviewId/group/drafts/closed', isLoggedIn, DraftsController.getClosedDrafts);
+app.post('/api/reviews/:reviewId/group/drafts/open', isLoggedIn, DraftsController.issueDraft); //OK
+//app.post('/api/reviews/:reviewId/group/drafts/open/responses', isLoggedIn, DraftsController.issueResponse); //OK
 
 //TO DELETE
 app.get('/api/films/public/invited', isLoggedIn, filmController.getInvitedFilms);

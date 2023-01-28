@@ -5,22 +5,32 @@ var Reviews = require('../service/ReviewsService');
 var constants = require('../utils/constants.js');
 var Drafts = require('../service/DraftsService');
 const User = require('../components/user.js');
+const Date = require('../components/date.js');
 
-module.exports.issueDraft = function getFilmReviews (req, res, next) {
+module.exports.issueDraft = function issueDraft (req, res, next) {
     var draft;
+    //parse the body
     try{
         draft = JSON.parse(req.body);
-        if(draft.Draft === undefined || draft.Draft.draftDate === undefined || draft.Draft.rating === undefined || draft.Draft.review === undefined) {
-            utils.writeJson(res, { errors: [{  'param': 'Server', 'msg':'unknown format, a JSON Draft object with following fields: \'draftDate\', \'rating\', \'review\'' }], }, 400);
+        if(draft.rating === undefined || draft.rating < 0 || draft.rating > 10|| draft.review === undefined) {
+            utils.writeJson(res, { errors: [{  'param': 'Server', 'msg':'unknown format, a JSON Draft object with following fields: \'rating\' [0-10], \'review\'' }], }, 400);
             return;
         }
     }
     catch(err){
-        utils.writeJson(res, { errors: [{  'param': 'Server', 'msg':'unknown format, a JSON Draft object with following fields: \'draftDate\', \'rating\', \'review\'' }], }, 400);
-        return;
+      draft = req.body;
+      if(draft.rating === undefined || draft.rating < 0 || draft.rating > 10|| draft.review === undefined) {
+          utils.writeJson(res, { errors: [{  'param': 'Server', 'msg':'unknown format, a JSON Draft object with following fields: \'rating\' [0-10], \'review\'' }], }, 400);
+          return;
+      }
     }
+    draft = {
+      draftDate : Date.createDate(),
+      rating : draft.rating,
+      review : draft.review
 
-    Drafts.issueDraft(req.params.filmId)
+    }
+    Drafts.issueDraft(Number(req.params.reviewId), req.user.id, draft)
     .then(function(response) {
         utils.writeJson(res, response, 201);
     })

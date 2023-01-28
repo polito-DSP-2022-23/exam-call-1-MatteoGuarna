@@ -40,24 +40,24 @@ exports.issueDraft = function(reviewId, userId, draft) {
                     else if (rows.length < 2){
                         reject(510) //internal inconsistency, review should be deleted
                     }
-                    else if (!rows.contains(userId)){
-                        reject(403) //user is not part of group, so can't create a draft
-                    }
                     else{
                         var contributorsId = [];
-                        for (var row of rows){
-                            if (row!=userId) contributorsId.push(row);
+                        var found = false;
+                        for (var row of rows) {
+                            if (userId != row.reviewerId) contributorsId.push(row.reviewerId);
+                            else found = true;
+                        }
+                        if (!found){
+                            reject(403);    //user is not part of group, so can't create a draft
+                            return;
                         }
                         contributorsId = "[" + String(contributorsId) + "]";
-                        var sql3 = "SELECT count(*) FROM drafts WHERE reviewId = ? AND open = 0"
-                        db.all(sql3, [reviewId], async (err, rows) => {
+                        var sql3 = "SELECT count(*) as total FROM drafts WHERE reviewId = ? AND open = 1"
+                        db.get(sql3, [reviewId], async (err, row) => {
                             if (err) {
                                 reject(err);
                             }
-                            else if (rows.length < 2){
-                                reject(510) //internal inconsistency, review should be deleted
-                            }
-                            else if(rows.length < 2){
+                            else if(row.total != 0){
                                 reject(409.1); //an open draft already exists
                             }
                             else {
@@ -66,7 +66,7 @@ exports.issueDraft = function(reviewId, userId, draft) {
                                     if(err) reject(err);
                                     else {
                                         try{
-                                            var draft = This.getOpenDraft(userId,reviewId);
+                                            var draft = await This.getOpenDraft(userId,reviewId);
                                             resolve(draft);
                                         }
                                         catch(err){
