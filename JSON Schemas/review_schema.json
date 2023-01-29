@@ -40,7 +40,7 @@
     "rating": {
       "type": "integer",
       "description": "the rating the reviewer has given to the film",
-      "minimum": 1,
+      "minimum": 0,
       "maximum": 10
     },
     "review": {
@@ -58,12 +58,7 @@
             "completed": {
               "const": false
             }
-          },
-          "allOf" : [   
-            {"not" : { "required" : ["reviewDate"] } },  
-            {"not" : { "required" : ["rating"] } },
-            {"not" : { "required" : ["review"] } }
-          ]
+          }
         },
         {
           "properties": {

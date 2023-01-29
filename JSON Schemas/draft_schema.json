@@ -39,7 +39,7 @@
       "rating": {
         "type": "integer",
         "description": "the rating the reviewer has given to the film",
-        "minimum": 1,
+        "minimum": 0,
         "maximum": 10
       },
       "review": {

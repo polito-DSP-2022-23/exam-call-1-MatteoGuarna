@@ -52,7 +52,11 @@
   "required": ["rating", "review", "completed"],
   "dependencies": {
     "completed": {
-      "const": true
+      "properties": {
+        "completed": {
+          "const": true
+        }
+      }
     }
   }
 }

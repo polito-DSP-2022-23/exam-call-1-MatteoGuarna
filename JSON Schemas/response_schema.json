@@ -38,8 +38,7 @@
               "agree": {
                 "const": true
               }
-            },
-            "not" : { "required" : ["response"] } 
+            }
           },
           {
             "properties": {
