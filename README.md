@@ -12,7 +12,7 @@ The structure of this repository is the following:
 <br />
 
 
-## Run th server in Windows
+## Run the server in Windows
 
 In order to correctly execute the program inside a Windows environment the following steps are required:
 
