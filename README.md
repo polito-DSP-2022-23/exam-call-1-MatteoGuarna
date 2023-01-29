@@ -33,7 +33,7 @@ Once the server is running, documentation about the APIs is available through an
 </br>
 
 ## Test the server with Postman Collection:
-The "Postman collection.md" file contains an example of the APIs which require a body to run (available both as text and a Postman collection), which can be used in order to facilitate the testing phase
-
+The "Postman Collection" fOLDER contains a README.md with an example of the APIs which require a body to run (available both as text and a Postman collection), which can be used in order to facilitate the testing phase.
+The JSON file "Postman Collection" can be imported into Postman to speed things up.
 
 <br />

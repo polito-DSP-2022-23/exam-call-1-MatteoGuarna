@@ -1,6 +1,6 @@
 ## The following JSON objects are examples of the input body required by the following APIs (all new APIs which need a body are reported)
 </br>
-A Postman collection with all examples is available at the following link: https://api.postman.com/collections/20784027-8fdaf719-9630-4833-97be-82e2c192807c?access_key=PMAT-01GQYN2WWZM9SQP857ZRPZGQPC
+A Postman collection with all examples is available at the following link: https://api.postman.com/collections/20784027-8fdaf719-9630-4833-97be-82e2c192807c?access_key=PMAT-01GQYN2WWZM9SQP857ZRPZGQPC, or alternativley can be imported from the JSON file in this same folder
 
 </br>
 
