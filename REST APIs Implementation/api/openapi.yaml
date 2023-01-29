@@ -1187,9 +1187,6 @@ components:
       - reviewType
       - reviewerId
       - completed
-      - reviewDate
-      - rating
-      - review
     Draft:
       description: schema for Draft data structures
       type: object

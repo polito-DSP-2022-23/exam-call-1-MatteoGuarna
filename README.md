@@ -16,18 +16,24 @@ The structure of this repository is the following:
 
 In order to correctly execute the program inside a Windows environment the following steps are required:
 
-  - make sure both NPM and node.js are installed (both can be retrieved here https://nodejs.org/en/download/)
-  - Open the terminal/command line/powershell
-    - Change working directory the one corresponding to 'REST APIs Implementation'
-    - Execute command 'npm install'
-    - Execute command 'node index.js'
+ - make sure both NPM and node.js are installed (both can be retrieved here https://nodejs.org/en/download/)
+ - Open the terminal/command line/powershell
+   - Change working directory the one corresponding to 'REST APIs Implementation'
+   - Execute command 'npm install'
+   - Execute command 'node index.js'
 
 *now the server is running and can be accessed through the loopback interface on the port 3001, by using the link:*  http://localhost:3001  *followed by the API url*
 
 </br>
 
+## Find the APIs
+
+Once the server is running, documentation about the APIs is available through an OpenAPI web page available here http://localhost:3001/docs
+
+</br>
+
 ## Test the server with Postman Collection:
- -  The "Postman collection.md" file contains an example of the APIs which require a body to run (available both as text and a Postman collection), which can be used in order to facilitate the testing phase
+The "Postman collection.md" file contains an example of the APIs which require a body to run (available both as text and a Postman collection), which can be used in order to facilitate the testing phase
 
 
 <br />
