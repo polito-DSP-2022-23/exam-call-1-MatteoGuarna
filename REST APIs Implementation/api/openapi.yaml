@@ -626,10 +626,6 @@ paths:
                 completed:
                   type: boolean
                   default: 'true'
-                reviewDate:
-                  type: string
-                  format: date
-                  description: the date when the review has been completed by the invited user
                 rating:
                   type: integer
                   description: the rating the reviewer has given to the film
@@ -856,7 +852,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Draft'
+              $ref: '#/components/schemas/DraftBody'
         required: true
       responses:
         '201':
@@ -944,7 +940,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Response'
+              $ref: '#/components/schemas/ResponseBody'
         required: true
       responses:
         '201':
@@ -1186,6 +1182,10 @@ components:
           type: string
           format: uri
       required:
+      - reviewId
+      - filmId
+      - reviewType
+      - reviewerId
       - completed
       - reviewDate
       - rating
@@ -1238,6 +1238,28 @@ components:
           type: string
           format: uri
       required:
+      - reviewId
+      - authorId
+      - contributorsId
+      - open
+      - draftDate
+      - rating
+      - review
+    DraftBody:
+      description: schema for Draft JSON required by the input
+      type: object
+      additionalProperties: false
+      properties:
+        rating:
+          type: integer
+          description: the rating the reviewer has given to the film
+          minimum: 1
+          maximum: 10
+        review:
+          type: string
+          description: a textual description of the review
+          maxLength: 1000
+      required:
       - draftDate
       - rating
       - review
@@ -1263,9 +1285,22 @@ components:
           type: string
           description: a textual description of the response, used ONLY if agree is false
           maxLength: 1000
-        self: 
+      required:
+      - responderId
+      - agree
+    ResponseBody:
+      description: schema for Response data structures
+      type: object
+      additionalProperties: false
+      properties:
+        agree:
+          type: boolean
+          description: true if the draft has been accepted, false otherwise
+          default: 'true'
+        response:
           type: string
-          format: uri
+          description: a textual description of the response, used ONLY if agree is false
+          maxLength: 1000
       required:
       - agree
   securitySchemes:
