@@ -221,8 +221,8 @@ module.exports.updateSingleReview = function updateSingleReview (req, res, next)
   else if(body.completed == false) {
     utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'The completed property is false, but it should be set to true.' }], }, 400);
   }
-  else if(body.rating > 10 || body.rating < 0) {
-    utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'Rating is supposed to be an integer bewteen 0 and 10.' }], }, 400);
+  else if(body.rating > 10 || body.rating < 1) {
+    utils.writeJson(res, { errors: [{ 'param': 'Server', 'msg': 'Rating is supposed to be an integer bewteen 1 and 10.' }], }, 400);
   }
   else {
     body = {

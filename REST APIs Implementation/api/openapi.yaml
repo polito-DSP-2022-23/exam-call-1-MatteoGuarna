@@ -860,7 +860,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Draft'
+                $ref: '#/components/schemas/DraftOpen'
         '400':
           description: Bad Request
           content: {}
@@ -902,7 +902,7 @@ paths:
           content:
             application/json:
               schema:
-                  $ref: '#/components/schemas/Draft'
+                  $ref: '#/components/schemas/DraftOpen'
         '401':
           description: Unauthorized
           content: {}
@@ -1229,8 +1229,58 @@ components:
         responses:
           type: array
           items:
-              type: integer
+            $ref: '#/components/schemas/Response'
           description: an array containing responses from all users
+        self: 
+          type: string
+          format: uri
+      required:
+      - reviewId
+      - authorId
+      - contributorsId
+      - open
+      - draftDate
+      - rating
+      - review
+    DraftOpen:
+      description: schema for Draft data structures
+      type: object
+      additionalProperties: false
+      properties:
+        $schema:
+          type: string
+          description: path to the JSON Schema to use for the validation of the JSON data structure describing the draft
+        draftId:
+          type: integer
+          description: unique identifier of the film for which this review invitation has been issued
+        reviewId:
+          type: integer
+          description: unique identifier of the film for which this review invitation has been issued
+        authorId:
+          type: integer
+          description: unique identifier of the the user who generates the draft
+        contributorsId:
+          type: array
+          items:
+              type: integer
+          description: unique identifier of the the users who has received this draft check invitation
+        open:
+          type: boolean
+          description: true if the review still requires responses, false otherwise
+          default: 'false'
+        draftDate:
+          type: string
+          format: date
+          description: the date when the draft has been issued by the author
+        rating:
+          type: integer
+          description: the rating the reviewer has given to the film
+          minimum: 1
+          maximum: 10
+        review:
+          type: string
+          description: a textual description of the review
+          maxLength: 1000
         self: 
           type: string
           format: uri
