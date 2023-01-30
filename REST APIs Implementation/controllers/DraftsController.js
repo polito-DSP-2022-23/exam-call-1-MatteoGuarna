@@ -17,7 +17,7 @@ module.exports.issueDraft = function issueDraft (req, res, next) {
       draft = req.body;
     }
 
-    if(draft.rating === undefined || draft.rating < 0 || draft.rating > 10|| draft.review === undefined) {
+    if(draft.rating === undefined || draft.rating < 1 || draft.rating > 10|| draft.review === undefined) {
       utils.writeJson(res, { errors: [{  'param': 'Server', 'msg':'unknown format, a JSON Draft object with following fields: \'rating\' [0-10], \'review\'' }], }, 400);
       return;
     }
